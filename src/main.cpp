@@ -15,7 +15,7 @@ int main()
 
     char file_path[] = "/home/letrend/workspace/poseestimator";
 
-    string obj = "duck";
+    string obj = "skull";
 
     PoseEstimator poseEstimator(file_path,obj);
 
@@ -39,11 +39,11 @@ int main()
             }
         }
         VectorXd pose(6);
-        pose << 0,-0.2,-0.5,0,0,0.6;
+        pose << 0,-0.3,-0.7,0,0.5,0.5;
         Mat img_camera = poseEstimator.renderColor(obj, pose);
 
         VectorXd pose_estimate(6);
-        pose_estimate << 0,-0.2,-0.5,0,0,0;
+        pose_estimate << 0,-0.3,-0.7,0,0,0;
         float lambda = 0.00000001;
         poseEstimator.getPose(obj,img_camera, pose_estimate, lambda);
 
