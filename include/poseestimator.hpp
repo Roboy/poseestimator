@@ -47,11 +47,12 @@ __constant__ float c_Kinv[9];
 __constant__ float c_cameraPose[16];
 
 __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out,
-                        uchar *img, int numberOfVertices);
+                        uchar *border, uchar *image, float mu_in, float mu_out, uchar *img, int numberOfVertices,
+                        float3* gradTrans, float3* gradRot);
 
 class PoseEstimator {
 public:
-    PoseEstimator(const char *file_path);
+    PoseEstimator(const char *file_path, string &object);
 
     ~PoseEstimator();
 

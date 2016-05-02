@@ -13,10 +13,11 @@ int main()
     glewExperimental = GL_TRUE;
     glewInit();
 
-    char file_path[] = "/home/letrend/workspace/omgl";
-    PoseEstimator poseEstimator(file_path);
+    char file_path[] = "/home/letrend/workspace/poseestimator";
 
     string obj = "duck";
+
+    PoseEstimator poseEstimator(file_path,obj);
 
     // run the main loop
     bool running = true;
@@ -38,7 +39,7 @@ int main()
             }
         }
         VectorXd pose(6);
-        pose << 0,-0.2,-0.6,0,0,0.2;
+        pose << 0,-0.1,-0.6,0,0,0;
         Mat img_camera = poseEstimator.renderColor(obj, pose);
 
         poseEstimator.getPose(obj,img_camera);
