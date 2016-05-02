@@ -19,7 +19,7 @@ void cuda_check(string file, int line) {
 PoseEstimator::PoseEstimator(const char *file_path, string &object) {
     char file[200];
     // load a model
-    sprintf(file, "%s/images/hippie.jpg", file_path);
+    sprintf(file, "%s/images/duck.png", file_path);
     textureImage[object] = imread(file);
 
     sprintf(file, "%s/models/%s.obj", file_path, object.c_str());
@@ -383,13 +383,10 @@ Mat PoseEstimator::renderColor(string &object, VectorXd &pose) {
     return img;
 }
 
-void PoseEstimator::getPose(string &object, Mat img_camera) {
+void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, float lambda) {
     imshow("camera image", img_camera);
     Mat img_camera_gray;
-    cvtColor(img_camera, img_camera_gray, CV_BGR2GRAY);
-    VectorXd pose(6), grad(6);
-    pose << 0, 0, -0.8, 0, 0, 0;
-    double lambda = 0.000001;
+    VectorXd grad(6);
 
     float3 *d_vertices = NULL, *d_normals = NULL, *d_vertices_out = NULL, *d_normals_out = NULL,
             *d_gradTrans = NULL, *d_gradRot = NULL;
@@ -415,9 +412,22 @@ void PoseEstimator::getPose(string &object, Mat img_camera) {
     cudaMalloc(&d_image, WIDTH * HEIGHT * sizeof(uchar));
     CUDA_CHECK;
 
+    // copy camera matrices to gpu
+    cudaMemcpyToSymbol(c_K, &K(0, 0), 9 * sizeof(float));
+    cudaMemcpyToSymbol(c_Kinv, &Kinv(0, 0), 9 * sizeof(float));
+
+    uchar *res = new uchar[WIDTH * HEIGHT];
+    float3 *vertices_out = new float3[vertices[object].size()];
+    float3 *normals_out = new float3[normals[object].size()];
+    float3 *gradTrans = new float3[normals[object].size()];
+    float3 *gradRot = new float3[normals[object].size()];
+
     for (uint iter = 0; iter < 1000; iter++) {
-        Mat img_estimator = renderColor(object, pose), img_estimator_gray;
+        cvtColor(img_camera, img_camera_gray, CV_BGR2GRAY);
+        Mat img_estimator = renderColor(object, pose), img_estimator_gray, img_estimator_gray2;
         cvtColor(img_estimator, img_estimator_gray, CV_BGR2GRAY);
+        // make a copy
+        img_estimator_gray.copyTo(img_estimator_gray2);
 
         vector<vector<cv::Point> > contours;
         vector<cv::Vec4i> hierarchy;
@@ -433,17 +443,18 @@ void PoseEstimator::getPose(string &object, Mat img_camera) {
         if (contours.size() > 0) {
             Mat border = Mat::zeros(HEIGHT, WIDTH, CV_8UC1);
             for (int idx = 0; idx < contours.size(); idx++) {
-                drawContours(border, contours, idx, 255, 1, 8, hierarchy, 0, cv::Point());
+                drawContours(border, contours, idx, 255, 2, 8, hierarchy, 0, cv::Point());
             }
-            imshow("border", border);
 
-            Mat R_mask = Mat::zeros(HEIGHT, WIDTH, CV_8UC1), Rc_mask, R, Rc;
+            Mat R_mask = Mat::zeros(HEIGHT, WIDTH, CV_8UC1), Rc_mask,
+                    R = Mat::zeros(HEIGHT, WIDTH, CV_8UC1),
+                    Rc= Mat::zeros(HEIGHT, WIDTH, CV_8UC1);
             fillPoly(R_mask, contours, 255);
             bitwise_not(R_mask, Rc_mask);
 
             // this will mask out the respective part of the webcam image
-            bitwise_and(img_estimator_gray, R_mask, R);
-            bitwise_and(img_estimator_gray, Rc_mask, Rc);
+            bitwise_and(img_estimator_gray2, R_mask, R);
+            bitwise_and(img_estimator_gray2, Rc_mask, Rc);
 
             // convert camera image to float
             R.convertTo(R, CV_32FC1);
@@ -467,13 +478,14 @@ void PoseEstimator::getPose(string &object, Mat img_camera) {
 //        double sigma_out = sum(Rcpow).val[0] / A_out;
 
             double energy = -sum(Rpow).val[0] - sum(Rcpow).val[0];
+            cout << "cost: " << energy << endl;
 
             Matrix3f rot = Matrix3f::Identity();
+            Matrix3f skew;
             Vector3f p(pose(3), pose(4), pose(5));
             float angle = p.norm();
             if (abs(angle) > 0.0000001) {
                 p.normalize();
-                Matrix3f skew;
                 skew << 0, -p(2), p(1),
                         p(2), 0, -p(0),
                         -p(1), p(0), 0;
@@ -502,8 +514,12 @@ void PoseEstimator::getPose(string &object, Mat img_camera) {
             cudaMemset(d_img_out, 0, WIDTH * HEIGHT * sizeof(uchar));
             CUDA_CHECK;
             // set constants on gpu
-            cudaMemcpyToSymbol(c_K, &K(0, 0), 9 * sizeof(float));
-            cudaMemcpyToSymbol(c_Kinv, &Kinv(0, 0), 9 * sizeof(float));
+            Matrix3f M;
+            skew << 0, pose(2), -pose(1),
+                    -pose(2), 0, pose(0),
+                    pose(1), -pose(0), 0;
+            M = rot*skew;
+            cudaMemcpyToSymbol(c_M, &M(0, 0), 9 * sizeof(float));
             cudaMemcpyToSymbol(c_cameraPose, &cameraPose(0, 0), 16 * sizeof(float));
 
             dim3 block = dim3(1, 1, 1);
@@ -514,11 +530,6 @@ void PoseEstimator::getPose(string &object, Mat img_camera) {
                                        d_img_out, vertices[object].size(), d_gradTrans, d_gradRot);
             CUDA_CHECK;
 
-            uchar *res = new uchar[WIDTH * HEIGHT];
-            float3 *vertices_out = new float3[vertices[object].size()];
-            float3 *normals_out = new float3[normals[object].size()];
-            float3 *gradTrans = new float3[normals[object].size()];
-
             // copy data from gpu to cpu
             cudaMemcpy(res, d_img_out, WIDTH * HEIGHT * sizeof(uchar), cudaMemcpyDeviceToHost);
             CUDA_CHECK;
@@ -528,27 +539,65 @@ void PoseEstimator::getPose(string &object, Mat img_camera) {
             CUDA_CHECK;
             cudaMemcpy(gradTrans, d_gradTrans, normals[object].size() * sizeof(float3), cudaMemcpyDeviceToHost);
             CUDA_CHECK;
+            cudaMemcpy(gradRot, d_gradRot, normals[object].size() * sizeof(float3), cudaMemcpyDeviceToHost);
+            CUDA_CHECK;
 
             grad << 0,0,0,0,0,0;
             for (uint i = 0; i < vertices[object].size(); i++) {
 //                cout << "v: " << vertices_out[i].x << " " << vertices_out[i].y << " " << vertices_out[i].z << endl;
 //                cout << "n: " << normals_out[i].x << " " << normals_out[i].y << " " << normals_out[i].z << endl;
 //                cout << "g: " << gradTrans[i].x << " " << gradTrans[i].y << " " << gradTrans[i].z << endl;
+//                cout << "g: " << gradRot[i].x << " " << gradRot[i].y << " " << gradRot[i].z << endl;
 //                Vector3f n(normals_out[i].x, normals_out[i].y, normals_out[i].z);
 //                cout << n.norm() << endl;
-                grad(0)+=gradTrans[i].x;
-                grad(1)+=gradTrans[i].y;
-                grad(2)+=gradTrans[i].z;
+//                grad(0)+=gradTrans[i].x;
+//                grad(1)+=gradTrans[i].y;
+//                grad(2)+=gradTrans[i].z;
+                grad(3)+=gradRot[i].z;
+                grad(4)+=gradRot[i].x;
+                grad(5)+=gradRot[i].y;
             }
 
             pose += lambda*grad;
-            cout << pose << endl;
+            cout << "pose:\n" << pose << endl;
 
             Mat img(HEIGHT, WIDTH, CV_8UC1, res);
             imshow("result", img);
+
+            for (int idx = 0; idx < contours.size(); idx++) {
+                drawContours(img_camera_gray, contours, idx, 255, 2, 8, hierarchy, 0, cv::Point());
+            }
+            imshow("img_camera_gray", img_camera_gray);
             waitKey(1);
+        }else{
+            cout << "cannot find any contour" << endl;
+            return;
         }
     }
+    cudaFree(d_vertices);
+    CUDA_CHECK;
+    cudaFree(d_vertices_out);
+    CUDA_CHECK;
+    cudaFree(d_normals);
+    CUDA_CHECK;
+    cudaFree(d_normals_out);
+    CUDA_CHECK;
+    cudaFree(d_gradTrans);
+    CUDA_CHECK;
+    cudaFree(d_gradRot);
+    CUDA_CHECK;
+    cudaFree(d_border);
+    CUDA_CHECK;
+    cudaFree(d_img_out);
+    CUDA_CHECK;
+    cudaFree(d_image);
+    CUDA_CHECK;
+
+    delete[] res;
+    delete[] vertices_out;
+    delete[] normals_out;
+    delete[] gradTrans;
+    delete[] gradRot;
 }
 
 __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out,
@@ -620,7 +669,7 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positio
         normals_out[idx] = normal;
 
         // calculate dot product position and normal
-        float dot = fabsf(normal.x * pos.x/posNorm + normal.y * pos.y/posNorm + normal.z * pos.z/posNorm);
+        float dot = normal.x * pos.x/posNorm + normal.y * pos.y/posNorm + normal.z * pos.z/posNorm;
 
         // calculate gradient of silhuette
         float3 cross = {pos.y*normal.z-pos.z*normal.z,
@@ -653,15 +702,19 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positio
         pixelCoord.x = (int) pixel.x / pixel.z;
         pixelCoord.y = (int) pixel.y / pixel.z;
         // if its a border pixel and the dot product small enough
-        if (pixelCoord.x >= 0 && pixelCoord.x <= WIDTH && pixelCoord.y >= 0 && pixelCoord.y <= HEIGHT &&
-            dot < 0.1f && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {
+        if (pixelCoord.x >= 0 && pixelCoord.x < WIDTH && pixelCoord.y >= 0 && pixelCoord.y < HEIGHT &&
+                    (dot < 0.1f && dot > -0.1f) && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {
             img_out[pixelCoord.y * WIDTH + pixelCoord.x] = 255;
             float Rc = ((float)image[pixelCoord.y * WIDTH + pixelCoord.x]-mu_out)*((float)image[pixelCoord.y * WIDTH + pixelCoord.x]-mu_out);
             float R = ((float)image[pixelCoord.y * WIDTH + pixelCoord.x]-mu_in)*((float)image[pixelCoord.y * WIDTH + pixelCoord.x]-mu_in);
-            float statistics = (Rc - R) * dCnorm;
+            float statistics = (Rc - R) * dCnorm ;//
             gradTrans[idx].x = statistics*normal.x;
             gradTrans[idx].y = statistics*normal.y;
             gradTrans[idx].z = statistics*normal.z;
+
+            gradRot[idx].x = statistics*(c_M[0 + 3 * 0]*normal.x+c_M[1 + 3 * 0]*normal.y+c_M[2 + 3 * 0]*normal.z);
+            gradRot[idx].y = statistics*(c_M[0 + 3 * 1]*normal.x+c_M[1 + 3 * 1]*normal.y+c_M[2 + 3 * 1]*normal.z);
+            gradRot[idx].z = statistics*(c_M[0 + 3 * 2]*normal.x+c_M[1 + 3 * 2]*normal.y+c_M[2 + 3 * 2]*normal.z);
         }
     }
 }

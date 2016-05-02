@@ -39,10 +39,13 @@ int main()
             }
         }
         VectorXd pose(6);
-        pose << 0,-0.1,-0.6,0,0,0;
+        pose << 0,-0.2,-0.5,0,0,0.6;
         Mat img_camera = poseEstimator.renderColor(obj, pose);
 
-        poseEstimator.getPose(obj,img_camera);
+        VectorXd pose_estimate(6);
+        pose_estimate << 0,-0.2,-0.5,0,0,0;
+        float lambda = 0.00000001;
+        poseEstimator.getPose(obj,img_camera, pose_estimate, lambda);
 
         // end the current frame (internally swaps the front and back buffers)
         window.display();

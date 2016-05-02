@@ -44,6 +44,7 @@ struct PackedVertex {
 
 __constant__ float c_K[9];
 __constant__ float c_Kinv[9];
+__constant__ float c_M[9];
 __constant__ float c_cameraPose[16];
 
 __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out,
@@ -75,7 +76,7 @@ public:
 
     Mat renderColor(string &object, VectorXd &pose);
 
-    void getPose(string &object, Mat img_camera);
+    void getPose(string &object, Mat img_camera, VectorXd &pose, float lambda);
 
 private:
     bool getSimilarVertexIndex_fast(PackedVertex &packed, map<PackedVertex, unsigned short> &VertexToOutIndex,
