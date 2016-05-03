@@ -545,9 +545,9 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
 //                cout << "g: " << gradRot[i].x << " " << gradRot[i].y << " " << gradRot[i].z << endl;
 //                Vector3f n(normals_out[i].x, normals_out[i].y, normals_out[i].z);
 //                cout << n.norm() << endl;
-                grad(0) += gradTrans[i].x;
-                grad(1) += gradTrans[i].y;
-                grad(2) += gradTrans[i].z;
+//                grad(0) += gradTrans[i].x;
+//                grad(1) += gradTrans[i].y;
+//                grad(2) += gradTrans[i].z;
                 grad(3) += gradRot[i].x;
                 grad(4) += gradRot[i].y;
                 grad(5) += gradRot[i].z;
@@ -709,9 +709,9 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positio
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
 
-            float Om[9] = {0, pos.z, -pos.y,
-                           -pos.z, 0, pos.x,
-                           pos.y, -pos.x, 0};
+            float Om[9] = {0, v.z, -v.y,
+                           -v.z, 0, v.x,
+                           v.y, -v.x, 0};
             float M[9] = {0, 0, 0,
                           0, 0, 0,
                           0, 0, 0};
