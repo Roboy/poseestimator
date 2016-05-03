@@ -19,7 +19,7 @@ void cuda_check(string file, int line) {
 PoseEstimator::PoseEstimator(const char *file_path, string &object) {
     char file[200];
     // load a model
-    sprintf(file, "%s/images/hippie.jpg", file_path);
+    sprintf(file, "%s/images/duck.png", file_path);
     textureImage[object] = imread(file);
 
     sprintf(file, "%s/models/%s.obj", file_path, object.c_str());
@@ -475,8 +475,8 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
             pow(Rpow, 2.0, Rpow);
             pow(Rcpow, 2.0, Rcpow);
 
-//        double sigma_in = sum(Rpow).val[0] / A_in;
-//        double sigma_out = sum(Rcpow).val[0] / A_out;
+            double sigma_in = sum(Rpow).val[0] / A_in;
+            double sigma_out = sum(Rcpow).val[0] / A_out;
 
             double energy = -sum(Rpow).val[0] - sum(Rcpow).val[0];
             cout << "cost: " << energy << endl;
@@ -522,7 +522,7 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
 
             costFcn << < grid, block >> >
                                (d_vertices, d_normals, d_vertices_out, d_normals_out, d_border, d_image, mu_in, mu_out,
-                                       d_img_out, vertices[object].size(), d_gradTrans, d_gradRot);
+                                       sigma_in, sigma_out, d_img_out, vertices[object].size(), d_gradTrans, d_gradRot);
             CUDA_CHECK;
 
             // copy data from gpu to cpu
@@ -545,9 +545,9 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
 //                cout << "g: " << gradRot[i].x << " " << gradRot[i].y << " " << gradRot[i].z << endl;
 //                Vector3f n(normals_out[i].x, normals_out[i].y, normals_out[i].z);
 //                cout << n.norm() << endl;
-//                grad(0) += gradTrans[i].x;
-//                grad(1) += gradTrans[i].y;
-//                grad(2) += gradTrans[i].z;
+                grad(0) += gradTrans[i].x;
+                grad(1) += gradTrans[i].y;
+                grad(2) += gradTrans[i].z;
                 grad(3) += gradRot[i].x;
                 grad(4) += gradRot[i].y;
                 grad(5) += gradRot[i].z;
@@ -596,8 +596,8 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
 }
 
 __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out,
-                        uchar *border, uchar *image, float mu_in, float mu_out, uchar *img_out, int numberOfVertices,
-                        float3 *gradTrans, float3 *gradRot) {
+                        uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in, float sigma_out,
+                        uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot) {
     // iteration over image is parallelized
     int idx = threadIdx.x + blockDim.x * blockIdx.x;
     if (idx < numberOfVertices) {
@@ -667,7 +667,7 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positio
         float dot = normal.x * pos.x / posNorm + normal.y * pos.y / posNorm + normal.z * pos.z / posNorm;
 
         // calculate gradient of silhuette
-        float3 cross = {pos.y * normal.z - pos.z * normal.z,
+        float3 cross = {pos.y * normal.z - pos.z * normal.y,
                         pos.z * normal.x - pos.x * normal.z,
                         pos.x * normal.y - pos.y * normal.x};
         float dCnorm = sqrtf(cross.x * cross.x + cross.y * cross.y + cross.z * cross.z);
@@ -700,18 +700,18 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positio
         if (pixelCoord.x >= 0 && pixelCoord.x < WIDTH && pixelCoord.y >= 0 && pixelCoord.y < HEIGHT &&
             (dot < 0.1f && dot > -0.1f) && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {
             img_out[pixelCoord.y * WIDTH + pixelCoord.x] = 255;
-            float Rc = ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out) *
-                       ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out);
-            float R = ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in) *
-                      ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in);
-            float statistics = (Rc - R) * dCnorm * posNorm/(pos.z*pos.z*pos.z);
+            float Rc = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out) *
+                       ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out))/sigma_out;
+            float R = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in) *
+                      ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in))/sigma_in;
+            float statistics = (logf(sigma_out/sigma_in)+ Rc - R) * dCnorm * posNorm/(pos.z*pos.z*pos.z) ;//
             gradTrans[idx].x = statistics * normal.x;
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
 
-            float Om[9] = {0, -pos.z, pos.y,
-                           pos.z, 0, -pos.x,
-                           -pos.y, pos.x, 0};
+            float Om[9] = {0, pos.z, -pos.y,
+                           -pos.z, 0, pos.x,
+                           pos.y, -pos.x, 0};
             float M[9] = {0, 0, 0,
                           0, 0, 0,
                           0, 0, 0};
@@ -719,8 +719,7 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positio
             for (uint i = 0; i < 3; i++)
                 for (uint j = 0; j < 3; j++)
                     for (uint k = 0; k < 3; k++)
-                        M[j + 3 * i] += c_cameraPose[i + 3 * k] * Om[k + 3 * j];
-
+                        M[i + 3 * j] += c_cameraPose[i + 4 * k] * Om[k + 3 * j];
             gradRot[idx].x = statistics * (M[0 + 3 * 0] * normal.x + M[1 + 3 * 0] * normal.y + M[2 + 3 * 0] * normal.z);
             gradRot[idx].y = statistics * (M[0 + 3 * 1] * normal.x + M[1 + 3 * 1] * normal.y + M[2 + 3 * 1] * normal.z);
             gradRot[idx].z = statistics * (M[0 + 3 * 2] * normal.x + M[1 + 3 * 2] * normal.y + M[2 + 3 * 2] * normal.z);
