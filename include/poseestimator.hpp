@@ -18,6 +18,11 @@
 // cuda
 #include <cuda_runtime.h>
 
+// Converts degrees to radians.
+#define degreesToRadians(angleDegrees) (angleDegrees * (float)M_PI / 180.0f)
+// Converts radians to degrees.
+#define radiansToDegrees(angleRadians) (angleRadians * 180.0f / (float)M_PI)
+
 #define WIDTH 640
 #define HEIGHT 480
 
@@ -75,7 +80,7 @@ public:
 
     Mat renderColor(string &object, VectorXd &pose);
 
-    void getPose(string &object, Mat img_camera, VectorXd &pose, float lambda);
+    void getPose(string &object, Mat img_camera, VectorXd &pose, float lambda_trans, float lambda_rot);
 
 private:
     bool getSimilarVertexIndex_fast(PackedVertex &packed, map<PackedVertex, unsigned short> &VertexToOutIndex,

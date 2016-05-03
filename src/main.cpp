@@ -19,6 +19,9 @@ int main()
 
     PoseEstimator poseEstimator(file_path,obj);
 
+    namedWindow("camera image");
+    moveWindow("camera image", 1000,0);
+
     // run the main loop
     bool running = true;
     while (running)
@@ -39,13 +42,17 @@ int main()
             }
         }
         VectorXd pose(6);
-        pose << 0,-0.1,-0.7,0.5,0.5,0.5;
+        pose << 0,-0.1,-0.5,degreesToRadians(-30),0,0;
         Mat img_camera = poseEstimator.renderColor(obj, pose);
+        imshow("camera image", img_camera);
+        cout << "press space to start" << endl;
+        waitKey(0);
 
         VectorXd pose_estimate(6);
-        pose_estimate << 0,-0.1,-0.7,0,0,0;
-        float lambda = 0.0000001f;
-        poseEstimator.getPose(obj,img_camera, pose_estimate, lambda);
+        pose_estimate << 0,-0.1,-0.5,0,0,0;
+        float lambda_trans = 0.000000001f;
+        float lambda_rot = 0.00000001f;
+        poseEstimator.getPose(obj,img_camera, pose_estimate, lambda_trans, lambda_rot);
 
         // end the current frame (internally swaps the front and back buffers)
         window.display();
