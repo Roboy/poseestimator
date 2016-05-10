@@ -4,6 +4,7 @@ PROJECT(poseestimator C CXX)
 
 # RelWithDebInfo, Release or Debug
 SET(CMAKE_BUILD_TYPE Debug FORCE)
+
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -std=c++11 -D_MWAITXINTRIN_H_INCLUDED" )
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -25,10 +26,28 @@ find_package(GLEW REQUIRED)
 # CUDA
 SET(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-7.5)
 FIND_PACKAGE(CUDA REQUIRED)
-SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -Xcompiler -g -gencode=arch=compute_52,code=sm_52 --use_fast_math)
+SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -DDEBUG -G -Xcompiler -g -gencode=arch=compute_52,code=sm_52 --use_fast_math)
 
 # OpenCV
-FIND_PACKAGE(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_imgproc opencv_imgcodecs opencv_calib3d REQUIRED)
+FIND_PACKAGE(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_imgproc opencv_imgcodecs opencv_calib3d opencv_videoio REQUIRED)
+
+# pcl
+find_package(PCL 1.8 COMPONENTS visualization REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+# the following strips some vtk stuff, otherwise the nvcc compiler cannot deal with pcl
+get_directory_property(dir_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
+set(vtk_flags)
+foreach(it ${dir_defs})
+    if(it MATCHES "vtk*")
+        list(APPEND vtk_flags ${it})
+    endif()
+endforeach()
+
+foreach(d ${vtk_flags})
+    remove_definitions(-D${d})
+endforeach()
 
 INCLUDE_DIRECTORIES(include)
 
@@ -38,6 +57,6 @@ INCLUDE_DIRECTORIES(include)
 # preprocessor define: source directory
 ADD_DEFINITIONS(-DTSDF_CUDA_SOURCE_DIR=${PROJECT_SOURCE_DIR})
 
-CUDA_ADD_EXECUTABLE(poseestimator src/main.cpp src/poseestimator.cu)
-TARGET_LINK_LIBRARIES(poseestimator ${OpenCV_LIBS} ${SFML_LIBRARIES} ${GLEW_LIBRARIES} -lpthread -lGL)
+CUDA_ADD_EXECUTABLE(poseestimator src/main.cpp src/poseestimator.cu src/visualizer.cpp)
+TARGET_LINK_LIBRARIES(poseestimator ${OpenCV_LIBS} ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${PCL_LIBRARIES} -lpthread -lGL)
 

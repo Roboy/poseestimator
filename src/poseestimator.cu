@@ -388,7 +388,7 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
     VectorXd grad(6);
     VectorXd initial_pose = pose;
 
-    float3 *d_vertices = NULL, *d_normals = NULL, *d_vertices_out = NULL, *d_normals_out = NULL,
+    float3 *d_vertices = NULL, *d_normals = NULL, *d_vertices_out = NULL, *d_normals_out = NULL, *d_tangents_out = NULL,
             *d_gradTrans = NULL, *d_gradRot = NULL;
     uchar *d_image = NULL, *d_border = NULL, *d_img_out = NULL;
 
@@ -400,6 +400,8 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
     cudaMalloc(&d_normals, normals[object].size() * sizeof(float3));
     CUDA_CHECK;
     cudaMalloc(&d_normals_out, normals[object].size() * sizeof(float3));
+    CUDA_CHECK;
+    cudaMalloc(&d_tangents_out, normals[object].size() * sizeof(float3));
     CUDA_CHECK;
     cudaMalloc(&d_gradTrans, vertices[object].size() * sizeof(float3));
     CUDA_CHECK;
@@ -524,7 +526,7 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
             dim3 grid = dim3(vertices[object].size() / block.x, 1, 1);
 
             costFcn << < grid, block >> >
-                               (d_vertices, d_normals, d_vertices_out, d_normals_out, d_border, d_image, mu_in, mu_out,
+                               (d_vertices, d_normals, d_vertices_out, d_normals_out, d_tangents_out, d_border, d_image, mu_in, mu_out,
                                        sigma_in, sigma_out, d_img_out, vertices[object].size(), d_gradTrans, d_gradRot);
             CUDA_CHECK;
 
@@ -603,7 +605,7 @@ void PoseEstimator::getPose(string &object, Mat img_camera, VectorXd &pose, floa
     delete[] gradRot;
 }
 
-__global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out,
+__global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out, float3 *tangents_out,
                         uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in, float sigma_out,
                         uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot) {
     // iteration over image is parallelized

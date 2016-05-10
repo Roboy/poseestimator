@@ -17,7 +17,6 @@
 #include <opencv2/opencv.hpp>
 // cuda
 #include <cuda_runtime.h>
-
 // Converts degrees to radians.
 #define degreesToRadians(angleDegrees) (angleDegrees * (float)M_PI / 180.0f)
 // Converts radians to degrees.
@@ -51,7 +50,7 @@ __constant__ float c_K[9];
 __constant__ float c_Kinv[9];
 __constant__ float c_cameraPose[16];
 
-__global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out,
+__global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *positions_out, float3 *normals_out, float3 *tangents_out,
                         uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in, float sigma_out,
                         uchar *img, int numberOfVertices, float3* gradTrans, float3* gradRot);
 

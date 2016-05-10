@@ -1,3 +1,4 @@
+#include "visualizer.hpp"
 #include "poseestimator.hpp"
 #include <SFML/Window.hpp>
 
@@ -18,6 +19,8 @@ int main()
     string obj = "duck";
 
     PoseEstimator poseEstimator(file_path,obj);
+
+//    Visualizer visualizer;
 
     namedWindow("camera image");
     moveWindow("camera image", 1000,0);
@@ -41,6 +44,9 @@ int main()
                 glViewport(0, 0, event.size.width, event.size.height);
             }
         }
+
+        visualizer.viewer->spinOnce (100);
+
         VectorXd pose(6);
         pose << 0,-0.1,-0.5,degreesToRadians(-30),0,0;
         Mat img_camera = poseEstimator.renderColor(obj, pose);
