@@ -27,6 +27,8 @@ int main()
 
     // run the main loop
     bool running = true;
+    VectorXd pose_estimator(6);
+    pose_estimator << 0,-0.8,-3,0,0,0;
     while (running)
     {
         // handle events
@@ -45,29 +47,31 @@ int main()
             }
         }
 
+        static float angle = 0;
+        angle +=5;
+
         VectorXd pose(6),grad(6);
-        pose << 0,-0.5,-1.5,0,degreesToRadians(10),0;
+        pose << 0,-0.8,-3,0,0,degreesToRadians(angle);
         Mat img_camera = renderer.renderColor(obj, pose);
         imshow("camera image", img_camera);
         cout << "press space to start" << endl;
-        cv::waitKey(0);
+        cv::waitKey(1);
 
-        pose << 0,-0.5,-1.5,0,0,0;
-        float lambda_trans = 0.00000001, lambda_rot = 0.000001;
-        for(uint iter=0;iter<10000;iter++) {
-            Mat img_artificial = renderer.renderColor(obj, pose);
+        float lambda_trans = 0.00000001, lambda_rot = 0.0000001;
+        for(uint iter=0;iter<100;iter++) {
+            Mat img_artificial = renderer.renderColor(obj, pose_estimator);
             imshow("artificial image", img_artificial);
             cv::waitKey(1);
-            poseestimator.iterateOnce(img_camera, img_artificial, pose, grad);
-            pose(0) += lambda_trans*grad(0);
-            pose(1) += lambda_trans*grad(1);
-            pose(2) += lambda_trans*grad(2);
-            pose(3) += lambda_rot*grad(3);
-            pose(4) += lambda_rot*grad(4);
-            pose(5) += lambda_rot*grad(5);
+            poseestimator.iterateOnce(img_camera, img_artificial, pose_estimator, grad);
+            pose_estimator(0) += lambda_trans*grad(0);
+            pose_estimator(1) += lambda_trans*grad(1);
+            pose_estimator(2) += lambda_trans*grad(2);
+            pose_estimator(3) += lambda_rot*grad(3);
+            pose_estimator(4) += lambda_rot*grad(4);
+            pose_estimator(5) += lambda_rot*grad(5);
 
-//            renderer.visualize(poseestimator.vertices_out, poseestimator.normals_out, poseestimator.numberOfVertices);
-//            renderer.visualize(poseestimator.vertices_out, poseestimator.tangents_out, poseestimator.numberOfVertices);
+            renderer.visualize(poseestimator.vertices_out, poseestimator.normals_out, poseestimator.numberOfVertices);
+            renderer.visualize(poseestimator.vertices_out, poseestimator.tangents_out, poseestimator.numberOfVertices);
         }
 
         // end the current frame (internally swaps the front and back buffers)
