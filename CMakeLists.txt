@@ -2,6 +2,10 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(poseestimator C CXX)
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
 # RelWithDebInfo, Release or Debug
 SET(CMAKE_BUILD_TYPE Debug FORCE)
 
@@ -32,7 +36,7 @@ SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -DDEBUG -G -Xcompiler -g -gencode=arch=co
 FIND_PACKAGE(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_imgproc opencv_imgcodecs opencv_calib3d opencv_videoio REQUIRED)
 
 # pcl
-find_package(PCL 1.8 COMPONENTS visualization REQUIRED)
+find_package(PCL 1.8 REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
@@ -57,6 +61,8 @@ INCLUDE_DIRECTORIES(include)
 # preprocessor define: source directory
 ADD_DEFINITIONS(-DTSDF_CUDA_SOURCE_DIR=${PROJECT_SOURCE_DIR})
 
-CUDA_ADD_EXECUTABLE(poseestimator src/main.cpp src/poseestimator.cu src/visualizer.cpp)
-TARGET_LINK_LIBRARIES(poseestimator ${OpenCV_LIBS} ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${PCL_LIBRARIES} -lpthread -lGL)
+CUDA_ADD_LIBRARY(poseestimator src/poseestimator.cu SHARED)
+
+ADD_EXECUTABLE(poseestimation src/main.cpp src/renderer.cpp)
+TARGET_LINK_LIBRARIES(poseestimation ${OpenCV_LIBS} ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${PCL_LIBRARIES} -lpthread -lGL poseestimator)
 

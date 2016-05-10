@@ -1,5 +1,5 @@
-#include "visualizer.hpp"
 #include "poseestimator.hpp"
+#include "renderer.hpp"
 #include <SFML/Window.hpp>
 
 int main()
@@ -16,14 +16,14 @@ int main()
 
     char file_path[] = "/home/letrend/workspace/poseestimator";
 
-    string obj = "duck";
+    string obj = "ironman";
 
-    PoseEstimator poseEstimator(file_path,obj);
+    Renderer renderer(file_path,obj);
 
-//    Visualizer visualizer;
+    Poseestimator poseestimator(renderer.vertices[obj], renderer.normals[obj], renderer.K);
 
-    namedWindow("camera image");
-    moveWindow("camera image", 1000,0);
+    cv::namedWindow("camera image");
+    cv::moveWindow("camera image", 1000,0);
 
     // run the main loop
     bool running = true;
@@ -45,20 +45,30 @@ int main()
             }
         }
 
-        visualizer.viewer->spinOnce (100);
-
-        VectorXd pose(6);
-        pose << 0,-0.1,-0.5,degreesToRadians(-30),0,0;
-        Mat img_camera = poseEstimator.renderColor(obj, pose);
+        VectorXd pose(6),grad(6);
+        pose << 0,-0.5,-1.5,0,degreesToRadians(10),0;
+        Mat img_camera = renderer.renderColor(obj, pose);
         imshow("camera image", img_camera);
         cout << "press space to start" << endl;
-        waitKey(0);
+        cv::waitKey(0);
 
-        VectorXd pose_estimate(6);
-        pose_estimate << 0,-0.1,-0.5,0,0,0;
-        float lambda_trans = 0.000000001f;
-        float lambda_rot = 0.00000001f;
-        poseEstimator.getPose(obj,img_camera, pose_estimate, lambda_trans, lambda_rot);
+        pose << 0,-0.5,-1.5,0,0,0;
+        float lambda_trans = 0.00000001, lambda_rot = 0.000001;
+        for(uint iter=0;iter<10000;iter++) {
+            Mat img_artificial = renderer.renderColor(obj, pose);
+            imshow("artificial image", img_artificial);
+            cv::waitKey(1);
+            poseestimator.iterateOnce(img_camera, img_artificial, pose, grad);
+            pose(0) += lambda_trans*grad(0);
+            pose(1) += lambda_trans*grad(1);
+            pose(2) += lambda_trans*grad(2);
+            pose(3) += lambda_rot*grad(3);
+            pose(4) += lambda_rot*grad(4);
+            pose(5) += lambda_rot*grad(5);
+
+//            renderer.visualize(poseestimator.vertices_out, poseestimator.normals_out, poseestimator.numberOfVertices);
+//            renderer.visualize(poseestimator.vertices_out, poseestimator.tangents_out, poseestimator.numberOfVertices);
+        }
 
         // end the current frame (internally swaps the front and back buffers)
         window.display();
