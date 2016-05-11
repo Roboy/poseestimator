@@ -28,7 +28,7 @@ int main()
     // run the main loop
     bool running = true;
     VectorXd pose_estimator(6);
-    pose_estimator << 0,-0.8,-3,0,0,0;
+    pose_estimator << 0,0,-2,0,0,0;
     while (running)
     {
         // handle events
@@ -47,18 +47,17 @@ int main()
             }
         }
 
-        static float angle = 0;
-        angle +=5;
+        static float angle = -40;
 
         VectorXd pose(6),grad(6);
-        pose << 0,-0.8,-3,0,0,degreesToRadians(angle);
+        pose << 0,0,-2,degreesToRadians(angle),0,0;
         Mat img_camera = renderer.renderColor(obj, pose);
         imshow("camera image", img_camera);
         cout << "press space to start" << endl;
-        cv::waitKey(1);
+        cv::waitKey(0);
 
-        float lambda_trans = 0.00000001, lambda_rot = 0.0000001;
-        for(uint iter=0;iter<100;iter++) {
+        float lambda_trans = 0.00000001, lambda_rot = 0.000001;
+        for(uint iter=0;iter<1000;iter++) {
             Mat img_artificial = renderer.renderColor(obj, pose_estimator);
             imshow("artificial image", img_artificial);
             cv::waitKey(1);
@@ -70,8 +69,8 @@ int main()
             pose_estimator(4) += lambda_rot*grad(4);
             pose_estimator(5) += lambda_rot*grad(5);
 
-            renderer.visualize(poseestimator.vertices_out, poseestimator.normals_out, poseestimator.numberOfVertices);
-            renderer.visualize(poseestimator.vertices_out, poseestimator.tangents_out, poseestimator.numberOfVertices);
+//            renderer.visualize(poseestimator.vertices_out, poseestimator.normals_out, poseestimator.numberOfVertices);
+//            renderer.visualize(poseestimator.vertices_out, poseestimator.tangents_out, poseestimator.numberOfVertices);
         }
 
         // end the current frame (internally swaps the front and back buffers)

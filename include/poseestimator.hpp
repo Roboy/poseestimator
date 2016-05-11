@@ -14,6 +14,8 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <string>
+// timer
+#include "timer.hpp"
 
 using namespace std;
 using namespace Eigen;
@@ -48,4 +50,5 @@ private:
             *d_gradTrans = NULL, *d_gradRot = NULL;
     uchar *d_image = NULL, *d_border = NULL, *d_img_out = NULL, *res;
     float3 *gradTrans, *gradRot;
+    Timer timer;
 };

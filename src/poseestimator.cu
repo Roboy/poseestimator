@@ -206,9 +206,9 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *vertice
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
 
-            float Om[9] = {0, v.z, -v.y,
-                           -v.z, 0, v.x,
-                           v.y, -v.x, 0};
+            float Om[9] = {0, pos.z, -pos.y,
+                           -pos.z, 0, pos.x,
+                           pos.y, -pos.x, 0};
             float M[9] = {0, 0, 0,
                           0, 0, 0,
                           0, 0, 0};
