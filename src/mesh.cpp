@@ -14,8 +14,9 @@ bool Texture::Load()
         m_image.write(&m_blob, "RGBA");
     }
     catch (Magick::Error& Error) {
-        std::cout << "Error loading texture '" << m_fileName << "': " << Error.what() << std::endl;
-        return false;
+        std::cout << "Error loading texture '" << m_fileName << "': " << Error.what() << " loading /home/letrend/workspace/poseestimator/images/white.png instead" << std::endl;
+        m_image.read("/home/letrend/workspace/poseestimator/images/white.png");
+        m_image.write(&m_blob, "RGBA");
     }
 
     glGenTextures(1, &m_textureObj);

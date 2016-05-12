@@ -1,6 +1,6 @@
 #include "poseestimator.hpp"
 #include "renderer.hpp"
-#include "mesh.hpp"
+#include <sdf/parser.hh>
 #include <SFML/Window.hpp>
 
 int main()
@@ -17,12 +17,17 @@ int main()
 
     char file_path[] = "/home/letrend/workspace/poseestimator";
 
-    string obj = "phoenix";
+    string obj = "object";
 
     Renderer renderer(file_path, obj);
 
+    sdf::SDFPtr sdfPtr;
+    sdf::readFile("/home/letrend/workspace/poseestimator/models/roboy/model.sdf", sdfPtr);
+    sdfPtr->PrintValues();
+
     Mesh mesh;
-    mesh.LoadMesh("/home/letrend/workspace/poseestimator/models/IronMan/IronMan.obj");
+
+    mesh.LoadMesh("/home/letrend/workspace/poseestimator/models/roboy/dae/121213_PROTOTYP_Kopf-Vorderteil.dae");
 
     Poseestimator poseestimator(renderer.vertices[obj], renderer.normals[obj], renderer.K);
 
@@ -32,7 +37,7 @@ int main()
     // run the main loop
     bool running = true;
     VectorXd pose_estimator(6);
-    pose_estimator << 0,0,-2,0,0,0;
+    pose_estimator << 0,0,-5,0,0,0;
     while (running)
     {
         // handle events
@@ -51,10 +56,10 @@ int main()
             }
         }
 
-        static float angle = -40;
+        static float angle = 0;
 
         VectorXd pose(6),grad(6);
-        pose << 0,0,-2,degreesToRadians(angle),0,0;
+        pose << 0,0,-1,degreesToRadians(angle),0,0;
         Mat img_camera = renderer.renderColor(obj, pose, &mesh);
         imshow("camera image", img_camera);
         cout << "press space to start" << endl;

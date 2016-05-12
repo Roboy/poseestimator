@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+	<library_materials>
+		<material id="Steel" name="Steel">
+			<instance_effect url="#Steel-fx"/>
+		</material>
+		<material id="" name="">
+			<instance_effect url="#-fx"/>
+		</material>
+		<material id="SolidWorks_DIN_Materials_1.0037_(S235JR)_165" name="SolidWorks_DIN_Materials_1.0037_(S235JR)_165">
+			<instance_effect url="#SolidWorks_DIN_Materials_1.0037_(S235JR)_165-fx"/>
+		</material>
+		<material id="SolidWorks_DIN_Materials_1.4301_(X5CrNi18-10)_131" name="SolidWorks_DIN_Materials_1.4301_(X5CrNi18-10)_131">
+			<instance_effect url="#SolidWorks_DIN_Materials_1.4301_(X5CrNi18-10)_131-fx"/>
+		</material>
+		<material id="Benutzerdefinierte_Materialien_Stahl_293" name="Benutzerdefinierte_Materialien_Stahl_293">
+			<instance_effect url="#Benutzerdefinierte_Materialien_Stahl_293-fx"/>
+		</material>
+		<material id="SolidWorks_DIN_Materials_3.0205_(EN-AW_1200)_258" name="SolidWorks_DIN_Materials_3.0205_(EN-AW_1200)_258">
+			<instance_effect url="#SolidWorks_DIN_Materials_3.0205_(EN-AW_1200)_258-fx"/>
+		</material>
+		<material id="solidworks_materials_PA_Typ_6_37" name="solidworks_materials_PA_Typ_6_37">
+			<instance_effect url="#solidworks_materials_PA_Typ_6_37-fx"/>
+		</material>
+		<material id="solidworks_materials_ABS_33" name="solidworks_materials_ABS_33">
+			<instance_effect url="#solidworks_materials_ABS_33-fx"/>
+		</material>
+		<material id="solidworks_materials_Epoxid,_Ungefuellt_234" name="solidworks_materials_Epoxid,_Ungefuellt_234">
+			<instance_effect url="#solidworks_materials_Epoxid,_Ungefuellt_234-fx"/>
+		</material>
+	</library_materials>
+	<library_effects>
+		<effect id="Steel-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0 0 0 1</color>
+						</emission>
+						<ambient>
+							<color>0.792156862745098 0.819607843137255 0.933333333333333 1</color>
+						</ambient>
+						<diffuse>
+							<color>0.792156862745098 0.819607843137255 0.933333333333333 1</color>
+						</diffuse>
+						<specular>
+							<color>0.633725490196078 0.655686274509804 0.746666666666667 1</color>
+						</specular>
+						<shininess>
+							<float>0.3125</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0 0 0 1</color>
+						</emission>
+						<ambient>
+							<color>0.792156862745098 0.819607843137255 0.933333333333333 1</color>
+						</ambient>
+						<diffuse>
+							<color>0.792156862745098 0.819607843137255 0.933333333333333 1</color>
+						</diffuse>
+						<specular>
+							<color>0.396078431372549 0.409803921568627 0.466666666666667 1</color>
+						</specular>
+						<shininess>
+							<float>0.400000005960464</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="SolidWorks_DIN_Materials_1.0037_(S235JR)_165-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0.111176470588235 0.115294117647059 0.115294117647059 1</color>
+						</emission>
+						<ambient>
+							<color>0.529411764705882 0.549019607843137 0.549019607843137 1</color>
+						</ambient>
+						<diffuse>
+							<color>0.529411764705882 0.549019607843137 0.549019607843137 1</color>
+						</diffuse>
+						<specular>
+							<color>0.370588228983038 0.384313718945372 0.384313718945372 1</color>
+						</specular>
+						<shininess>
+							<float>0.300000011920929</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="SolidWorks_DIN_Materials_1.4301_(X5CrNi18-10)_131-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0 0 0 1</color>
+						</emission>
+						<ambient>
+							<color>0.647058823529412 0.619607843137255 0.588235294117647 1</color>
+						</ambient>
+						<diffuse>
+							<color>0.647058823529412 0.619607843137255 0.588235294117647 1</color>
+						</diffuse>
+						<specular>
+							<color>0.452941168757046 0.433725482809777 0.411764698870042 1</color>
+						</specular>
+						<shininess>
+							<float>0.300000011920929</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="Benutzerdefinierte_Materialien_Stahl_293-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0 0 0 1</color>
+						</emission>
+						<ambient>
+							<color>1 1 1 1</color>
+						</ambient>
+						<diffuse>
+							<color>1 1 1 1</color>
+						</diffuse>
+						<specular>
+							<color>0.800000011920929 0.800000011920929 0.800000011920929 1</color>
+						</specular>
+						<shininess>
+							<float>0.100000001490116</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="SolidWorks_DIN_Materials_3.0205_(EN-AW_1200)_258-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0 0 0 1</color>
+						</emission>
+						<ambient>
+							<color>0.866666666666667 0.909803921568627 1 1</color>
+						</ambient>
+						<diffuse>
+							<color>0.866666666666667 0.909803921568627 1 1</color>
+						</diffuse>
+						<specular>
+							<color>0.433333333333333 0.454901960784314 0.5 1</color>
+						</specular>
+						<shininess>
+							<float>0.600000023841858</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="solidworks_materials_PA_Typ_6_37-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0.148235294117647 0.148235294117647 0.148235294117647 1</color>
+						</emission>
+						<ambient>
+							<color>0.494117647058824 0.494117647058824 0.494117647058824 1</color>
+						</ambient>
+						<diffuse>
+							<color>0.494117647058824 0.494117647058824 0.494117647058824 1</color>
+						</diffuse>
+						<specular>
+							<color>0.247058823529412 0.247058823529412 0.247058823529412 1</color>
+						</specular>
+						<shininess>
+							<float>0.400000005960464</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="solidworks_materials_ABS_33-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0.3 0.3 0.3 1</color>
+						</emission>
+						<ambient>
+							<color>1 1 1 1</color>
+						</ambient>
+						<diffuse>
+							<color>1 1 1 1</color>
+						</diffuse>
+						<specular>
+							<color>1 1 1 1</color>
+						</specular>
+						<shininess>
+							<float>0.310000002384186</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+		<effect id="solidworks_materials_Epoxid,_Ungefuellt_234-fx">
+			<profile_COMMON>
+				<technique sid="common">
+					<phong>
+						<emission>
+							<color>0.3 0.3 0.3 1</color>
+						</emission>
+						<ambient>
+							<color>1 1 1 1</color>
+						</ambient>
+						<diffuse>
+							<color>1 1 1 1</color>
+						</diffuse>
+						<specular>
+							<color>1 1 1 1</color>
+						</specular>
+						<shininess>
+							<float>0.310000002384186</float>
+						</shininess>
+						<transparency>
+							<float>0</float>
+						</transparency>
+					</phong>
+				</technique>
+			</profile_COMMON>
+		</effect>
+	</library_effects>
+</COLLADA>

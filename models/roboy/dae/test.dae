@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+	<library_nodes>
+		<node id="mvBF-MLC-20.04.2010_Default-1" name="mvBF-MLC-20.04.2010_Default-1">
+					<matrix>
+						1 0 0 0
+						0 1 0 0
+						0 0 1 0
+						0 0 0 1
+					</matrix>
+					<instance_geometry url="mvBF-MLC-20.04.2010_Default.dae#shape0-lib">
+						<bind_material>
+							<technique_common>
+								<instance_material symbol="Steel" target="library_materials.dae#Steel"/>
+							</technique_common>
+						</bind_material>
+					</instance_geometry>
+		</node>
+
+	</library_nodes>
+</COLLADA>

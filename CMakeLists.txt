@@ -38,12 +38,16 @@ find_package(assimp REQUIRED)
 find_package(OpenGL REQUIRED)
 
 # CUDA
-SET(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-7.5)
-FIND_PACKAGE(CUDA REQUIRED)
-SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -DDEBUG -G -Xcompiler -g -gencode=arch=compute_52,code=sm_52 --use_fast_math)
+set(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-7.5)
+find_package(CUDA REQUIRED)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -DDEBUG -G -Xcompiler -g -gencode=arch=compute_52,code=sm_52 --use_fast_math)
 
 # OpenCV
-FIND_PACKAGE(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_imgproc opencv_imgcodecs opencv_calib3d opencv_videoio REQUIRED)
+find_package(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_imgproc opencv_imgcodecs opencv_calib3d opencv_videoio REQUIRED)
+
+# sdformat
+find_package(SDFormat REQUIRED)
+include_directories(${SDFormat_INCLUDE_DIRS})
 
 # pcl
 find_package(PCL 1.8 REQUIRED)
@@ -63,7 +67,7 @@ foreach(d ${vtk_flags})
     remove_definitions(-D${d})
 endforeach()
 
-INCLUDE_DIRECTORIES(include)
+include_directories(include)
 
 #==============================================================================
 # Application
@@ -75,5 +79,5 @@ CUDA_ADD_LIBRARY(poseestimator src/poseestimator.cu SHARED)
 
 ADD_EXECUTABLE(poseestimation src/main.cpp src/renderer.cpp src/mesh.cpp)
 TARGET_LINK_LIBRARIES(poseestimation ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES}
-        ${ImageMagick_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS} poseestimator)
+        ${ImageMagick_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS} -lsdformat poseestimator)
 
