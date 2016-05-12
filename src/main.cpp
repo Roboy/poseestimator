@@ -1,5 +1,6 @@
 #include "poseestimator.hpp"
 #include "renderer.hpp"
+#include "mesh.hpp"
 #include <SFML/Window.hpp>
 
 int main()
@@ -16,9 +17,12 @@ int main()
 
     char file_path[] = "/home/letrend/workspace/poseestimator";
 
-    string obj = "ironman";
+    string obj = "phoenix";
 
-    Renderer renderer(file_path,obj);
+    Renderer renderer(file_path, obj);
+
+    Mesh mesh;
+    mesh.LoadMesh("/home/letrend/workspace/poseestimator/models/IronMan/IronMan.obj");
 
     Poseestimator poseestimator(renderer.vertices[obj], renderer.normals[obj], renderer.K);
 
@@ -51,14 +55,14 @@ int main()
 
         VectorXd pose(6),grad(6);
         pose << 0,0,-2,degreesToRadians(angle),0,0;
-        Mat img_camera = renderer.renderColor(obj, pose);
+        Mat img_camera = renderer.renderColor(obj, pose, &mesh);
         imshow("camera image", img_camera);
         cout << "press space to start" << endl;
         cv::waitKey(0);
 
         float lambda_trans = 0.00000001, lambda_rot = 0.000001;
         for(uint iter=0;iter<1000;iter++) {
-            Mat img_artificial = renderer.renderColor(obj, pose_estimator);
+            Mat img_artificial = renderer.renderColor(obj, pose_estimator, &mesh);
             imshow("artificial image", img_artificial);
             cv::waitKey(1);
             poseestimator.iterateOnce(img_camera, img_artificial, pose_estimator, grad);

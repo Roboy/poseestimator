@@ -27,6 +27,16 @@ pkg_check_modules( SFML REQUIRED sfml-graphics )
 # glew
 find_package(GLEW REQUIRED)
 
+# image magick
+find_package( ImageMagick COMPONENTS Magick++ MagickWand MagickCore REQUIRED)
+include_directories(${ImageMagick_Magick++_INCLUDE_DIR})
+
+# assimp
+find_package(assimp REQUIRED)
+
+# opengl
+find_package(OpenGL REQUIRED)
+
 # CUDA
 SET(CUDA_TOOLKIT_ROOT_DIR /usr/local/cuda-7.5)
 FIND_PACKAGE(CUDA REQUIRED)
@@ -63,6 +73,7 @@ ADD_DEFINITIONS(-DTSDF_CUDA_SOURCE_DIR=${PROJECT_SOURCE_DIR})
 
 CUDA_ADD_LIBRARY(poseestimator src/poseestimator.cu SHARED)
 
-ADD_EXECUTABLE(poseestimation src/main.cpp src/renderer.cpp)
-TARGET_LINK_LIBRARIES(poseestimation ${OpenCV_LIBS} ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${PCL_LIBRARIES} -lpthread -lGL poseestimator)
+ADD_EXECUTABLE(poseestimation src/main.cpp src/renderer.cpp src/mesh.cpp)
+TARGET_LINK_LIBRARIES(poseestimation ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES}
+        ${ImageMagick_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS} poseestimator)
 
