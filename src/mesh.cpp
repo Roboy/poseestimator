@@ -14,9 +14,8 @@ bool Texture::Load()
         m_image.write(&m_blob, "RGBA");
     }
     catch (Magick::Error& Error) {
-        std::cout << "Error loading texture '" << m_fileName << "': " << Error.what() << " loading /home/letrend/workspace/poseestimator/images/white.png instead" << std::endl;
-        m_image.read("/home/letrend/workspace/poseestimator/images/white.png");
-        m_image.write(&m_blob, "RGBA");
+        std::cout << "Error loading texture '" << m_fileName << "': " << Error.what() << std::endl;
+        return false;
     }
 
     glGenTextures(1, &m_textureObj);
@@ -84,6 +83,8 @@ Mesh::~Mesh()
 
 void Mesh::Clear()
 {
+    Vertices.clear();
+
     for (unsigned int i = 0 ; i < m_Textures.size() ; i++) {
         SAFE_DELETE(m_Textures[i]);
     }
@@ -139,8 +140,7 @@ bool Mesh::InitFromScene(const aiScene* pScene, const std::string& Filename)
 void Mesh::InitMesh(unsigned int Index, const aiMesh* paiMesh)
 {
     m_Entries[Index].MaterialIndex = paiMesh->mMaterialIndex;
-    
-    std::vector<Vertex> Vertices;
+
     std::vector<unsigned int> Indices;
 
     const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
@@ -213,7 +213,7 @@ bool Mesh::InitMaterials(const aiScene* pScene, const std::string& Filename)
 
         // Load a white texture in case the model does not include its own texture
         if (!m_Textures[i]) {
-            m_Textures[i] = new Texture(GL_TEXTURE_2D, "../Content/white.png");
+            m_Textures[i] = new Texture(GL_TEXTURE_2D, "/home/letrend/workspace/poseestimator/images/white.png");
 
             Ret = m_Textures[i]->Load();
         }

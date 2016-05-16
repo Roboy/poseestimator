@@ -1,6 +1,4 @@
 #include "model.hpp"
-#include "poseestimator.hpp"
-#include <sdf/parser.hh>
 #include <SFML/Window.hpp>
 
 int main()
@@ -15,7 +13,7 @@ int main()
     glewExperimental = GL_TRUE;
     glewInit();
 
-    Model model("/home/letrend/workspace/poseestimator/","Iron_Man_mark_6.dae");
+    Model model("/home/letrend/workspace/poseestimator/","model_simplified.sdf");
 
 //    Poseestimator poseestimator(renderer.vertices[obj], renderer.normals[obj], renderer.K);
 //
@@ -50,7 +48,8 @@ int main()
 //        pose << 0,0,-1,degreesToRadians(angle),0,0;
 //        Mat img_camera = model.render(pose);
         model.updateViewMatrix(window);
-        Mat img_camera = model.render();
+        Mat img_camera;
+        model.render(img_camera);
 //        imshow("camera image", img_camera);
 //        cout << "press space to start" << endl;
 //        cv::waitKey(0);

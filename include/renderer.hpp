@@ -53,7 +53,7 @@ public:
 
     void renderColor(Mesh *mesh);
 
-    Mat getImage();
+    void getImage(Mat &img);
 
     void visualize(float3 *vertices, float3 *vectors, int numberOfVertices);
 

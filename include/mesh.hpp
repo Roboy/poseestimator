@@ -69,6 +69,8 @@ public:
 
     Matrix4f ModelMatrix;
 
+    std::vector<Vertex> Vertices;
+
 private:
     bool InitFromScene(const aiScene *pScene, const std::string &Filename);
 

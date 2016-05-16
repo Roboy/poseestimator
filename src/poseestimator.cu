@@ -18,9 +18,7 @@ void cuda_check(string file, int line) {
     prev_line = line;
 }
 
-Poseestimator::Poseestimator(vector<glm::vec3> &vertices, vector<glm::vec3> &normals, Matrix3f &K) {
-    numberOfVertices = vertices.size();
-
+Poseestimator::Poseestimator(uint numberOfVertices, Matrix3f &K):m_numberOfVertices(numberOfVertices) {
     // initialize cuda
     cudaDeviceSynchronize();
     CUDA_CHECK;
@@ -48,12 +46,6 @@ Poseestimator::Poseestimator(vector<glm::vec3> &vertices, vector<glm::vec3> &nor
 
     // copy camera matrices to gpu
     cudaMemcpyToSymbol(c_K, &K(0, 0), 9 * sizeof(float));
-
-    // copy vertices and normals to gpu
-    cudaMemcpy(d_vertices, vertices.data(), numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
-    CUDA_CHECK;
-    cudaMemcpy(d_normals, normals.data(), numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
-    CUDA_CHECK;
 
     vertices_out = new float3[numberOfVertices];
     normals_out = new float3[numberOfVertices];
@@ -88,6 +80,14 @@ Poseestimator::~Poseestimator() {
     delete[] normals_out;
     delete[] gradTrans;
     delete[] gradRot;
+}
+
+void Poseestimator::copyDataToGPU(){
+    // copy vertices and normals to gpu
+    cudaMemcpy(d_vertices, vertices.data(), m_numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
+    CUDA_CHECK;
+    cudaMemcpy(d_normals, normals.data(), m_numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
+    CUDA_CHECK;
 }
 
 __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *vertices_out, float3 *normals_out,

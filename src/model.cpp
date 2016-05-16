@@ -81,20 +81,20 @@ Model::~Model(){
     delete filesystem;
 }
 
-Mat Model::render(VectorXd &pose){
+void Model::render(VectorXd &pose, Mat &img){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for(uint mesh=0; mesh<meshes.size(); mesh++){
         renderer->renderColor(meshes[mesh], pose);
     }
-    return renderer->getImage();
+    return renderer->getImage(img);
 }
 
-Mat Model::render(){
+void Model::render(Mat &img){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for(uint mesh=0; mesh<meshes.size(); mesh++){
         renderer->renderColor(meshes[mesh]);
     }
-    return renderer->getImage();
+    return renderer->getImage(img);
 }
 
 void Model::updateViewMatrix(sf::Window &window){
@@ -108,6 +108,7 @@ void Model::updateViewMatrix(sf::Window &window){
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)){
         sticky = !sticky;
     }
+
     if(sticky) {
         sf::Vector2i mousepos = sf::Mouse::getPosition(window);
         sf::Vector2i delta = windowsize/2-mousepos;
@@ -116,16 +117,16 @@ void Model::updateViewMatrix(sf::Window &window){
             // set cursor to window center
             sf::Mouse::setPosition(windowsize/2, window);
             // Compute new orientation
-            float horizontalAngle = speed_rot * float(delta.x);
-            float verticalAngle = speed_rot * float(delta.y);
+            float horizontalAngle = -speed_rot * float(delta.x);
+            float verticalAngle = -speed_rot * float(delta.y);
 
-            rot = Eigen::AngleAxisf(horizontalAngle, renderer->ViewMatrix.block<1, 3>(1, 0)) *
-                  Eigen::AngleAxisf(verticalAngle, renderer->ViewMatrix.block<1, 3>(0, 0));
+            rot = Eigen::AngleAxisf(horizontalAngle, Vector3f::UnitY()) *
+                  Eigen::AngleAxisf(verticalAngle, Vector3f::UnitX());
         }
     }
 
-    Vector3f direction = renderer->ViewMatrix.block<1,3>(2,0);
-    Vector3f right = renderer->ViewMatrix.block<1,3>(0,0);
+    Vector3f direction = Vector3f::UnitZ();
+    Vector3f right = Vector3f::UnitX();
 
     Vector3f dcameraPos(0,0,0);
     // Move forward
@@ -149,5 +150,5 @@ void Model::updateViewMatrix(sf::Window &window){
     RT.topLeftCorner(3,3) = rot;
     RT.topRightCorner(3,1) = dcameraPos;
 
-    renderer->ViewMatrix = renderer->ViewMatrix*RT;
+    renderer->ViewMatrix = RT*renderer->ViewMatrix;
 }

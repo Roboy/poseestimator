@@ -31,7 +31,7 @@ void main(){
 	vec3 vertexPosition_cameraspace = ( ViewMatrix * ModelMatrix * vec4(vertexPosition_modelspace,1)).xyz;
 	EyeDirection_cameraspace = vec3(0,0,0) - vertexPosition_cameraspace;
 
-	// Vector that goes from the vertex to the light, in camera space. ModelMatrix is ommited because it's identity.
+	// Vector that goes from the vertex to the light, in camera space.
 	vec3 LightPosition_cameraspace = ( ViewMatrix * ModelMatrix * vec4(LightPosition_worldspace,1)).xyz;
 	LightDirection_cameraspace = LightPosition_cameraspace + EyeDirection_cameraspace;
 

@@ -38,13 +38,13 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *vertice
 
 class Poseestimator {
 public:
-    Poseestimator(vector<glm::vec3> &vertices, vector<glm::vec3> &normals, Matrix3f &K);
+    Poseestimator(uint numberOfVertices, Matrix3f &K);
 
     ~Poseestimator();
 
     double iterateOnce(Mat img_camera, Mat img_artificial, VectorXd &pose, VectorXd &grad);
     float3 *vertices_out, *normals_out, *tangents_out;
-    int numberOfVertices = 0;
+    int m_numberOfVertices = 0;
 private:
     float3 *d_vertices = NULL, *d_normals = NULL, *d_vertices_out = NULL, *d_normals_out = NULL, *d_tangents_out = NULL,
             *d_gradTrans = NULL, *d_gradRot = NULL;

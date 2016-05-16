@@ -80,20 +80,10 @@ void Renderer::renderColor(Mesh *mesh, VectorXd &pose) {
         rot = rot + (1.0 - cos(angle)) * skew * skew;
     }
 
-    ViewMatrix = Matrix4f::Identity();
-    ViewMatrix.topLeftCorner(3, 3) = rot;
-    ViewMatrix.topRightCorner(3, 1) << pose(0), pose(1), pose(2);
+    ViewMatrix.topLeftCorner(3,3) = rot;
+    ViewMatrix.topRightCorner(3,1) << pose(0), pose(1), pose(2);
 
-    Eigen::Matrix4f MVP = ProjectionMatrix * ViewMatrix * mesh->ModelMatrix;
-
-    glUseProgram(program["color"]);
-    glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix(0, 0));
-    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP(0, 0));
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &mesh->ModelMatrix(0, 0));
-    Vector3f lightPosition(0, 1, 1);
-    glUniform3fv(LightPositionID, 1, &lightPosition(0));
-
-    mesh->Render();
+    renderColor(mesh);
 }
 
 void Renderer::renderColor(Mesh *mesh) {
@@ -103,19 +93,20 @@ void Renderer::renderColor(Mesh *mesh) {
     glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix(0, 0));
     glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP(0, 0));
     glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &mesh->ModelMatrix(0, 0));
-    Vector3f lightPosition(0, 1, 1);
+    Vector3f lightPosition(0,-4,1);
+//    lightPosition = ViewMatrix.topRightCorner(3,1);
+//    printf("%.4f %.4f %.4f\n", lightPosition(0), lightPosition(1), lightPosition(2));
     glUniform3fv(LightPositionID, 1, &lightPosition(0));
 
     mesh->Render();
 }
 
-Mat Renderer::getImage(){
+void Renderer::getImage(Mat &img){
     // get the image from opengl buffer
-    GLubyte *data = new GLubyte[3 * WIDTH * HEIGHT];
+    GLubyte data[3 * WIDTH * HEIGHT];
     glReadPixels(0, 0, WIDTH, HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, data);
-    Mat img = cv::Mat(HEIGHT, WIDTH, CV_8UC3, data);
+    img = cv::Mat(HEIGHT, WIDTH, CV_8UC3, data);
     flip(img, img, -1);
-    return img;
 }
 
 bool Renderer::loadShaderCodeFromFile(const char *file_path, string &src) {
