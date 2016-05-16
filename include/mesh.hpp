@@ -15,11 +15,14 @@
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Dense>
+// std
+#include <string>
 
 #define INVALID_OGL_VALUE 0xffffffff
 #define SAFE_DELETE(p) if (p) { delete p; p = NULL; }
 
 using namespace Eigen;
+using namespace std;
 
 struct Vertex {
     Vector3f m_pos;
@@ -60,6 +63,8 @@ public:
     bool LoadMesh(const std::string &Filename);
 
     void Render();
+
+    string name = "default name";
 
 private:
     bool InitFromScene(const aiScene *pScene, const std::string &Filename);

@@ -15,4 +15,6 @@ CMakeCache.txt
 Makefile
 openGLconvenience
 build/
+bin/
+lib/
 poseestimation

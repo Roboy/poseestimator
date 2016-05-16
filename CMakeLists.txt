@@ -9,7 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 # RelWithDebInfo, Release or Debug
 SET(CMAKE_BUILD_TYPE Debug FORCE)
 
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -std=c++11 -D_MWAITXINTRIN_H_INCLUDED" )
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -std=c++11" )# -D_MWAITXINTRIN_H_INCLUDED
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -50,9 +50,12 @@ find_package(SDFormat REQUIRED)
 include_directories(${SDFormat_INCLUDE_DIRS})
 
 # pcl
-find_package(PCL 1.8 REQUIRED)
+find_package(PCL REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
+# pcl
+find_package(Boost COMPONENTS filesystem REQUIRED)
 
 # the following strips some vtk stuff, otherwise the nvcc compiler cannot deal with pcl
 get_directory_property(dir_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
@@ -77,7 +80,7 @@ ADD_DEFINITIONS(-DTSDF_CUDA_SOURCE_DIR=${PROJECT_SOURCE_DIR})
 
 CUDA_ADD_LIBRARY(poseestimator src/poseestimator.cu SHARED)
 
-ADD_EXECUTABLE(poseestimation src/main.cpp src/renderer.cpp src/mesh.cpp)
+ADD_EXECUTABLE(poseestimation src/main.cpp src/renderer.cpp src/mesh.cpp src/model.cpp)
 TARGET_LINK_LIBRARIES(poseestimation ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES}
-        ${ImageMagick_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS} -lsdformat poseestimator)
+        ${ImageMagick_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS} ${SDFormat_LIBRARIES} ${BOOST_LIBRARIES} poseestimator)
 
