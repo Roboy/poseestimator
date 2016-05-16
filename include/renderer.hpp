@@ -1,6 +1,7 @@
 // glew
 #include <GL/glew.h>
 // sfml
+#include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
 // glm
 #include <glm/glm.hpp>
@@ -42,23 +43,17 @@ using namespace std;
 using namespace Eigen;
 using cv::Mat;
 
-struct PackedVertex {
-    glm::vec3 position;
-    glm::vec2 uv;
-    glm::vec3 normal;
-
-    bool operator<(const PackedVertex that) const {
-        return memcmp((void *) this, (void *) &that, sizeof(PackedVertex)) > 0;
-    };
-};
-
 class Renderer {
 public:
-    Renderer(const char *file_path, string &object);
+    Renderer(const char *rootDirectory);
 
     ~Renderer();
 
-    Mat renderColor(string &object, VectorXd &pose, Mesh *mesh);
+    void renderColor(Mesh *mesh, VectorXd &pose);
+
+    void renderColor(Mesh *mesh);
+
+    Mat getImage();
 
     void visualize(float3 *vertices, float3 *vectors, int numberOfVertices);
 
@@ -72,15 +67,12 @@ private:
     void createTransformProgram(GLuint &shader, const GLchar *feedbackVaryings[], uint numberOfVaryings,
                                 GLuint &program);
 
-    GLint createRenderProgram(GLuint &vertex_shader, GLuint &fragment_shader, GLuint &program,GLint &MatrixID,
-                              GLint &ViewMatrixID, GLint &ModelMatrixID, GLint &LightPositionID);
+    GLint createRenderProgram(GLuint &vertex_shader, GLuint &fragment_shader, GLuint &program);
 
-    map<string, GLuint> shader, program, vertexbuffer, uvbuffer, normalbuffer, elementbuffer;
-    map<string, vector<glm::vec2>> uvs;
+    map<string, GLuint> shader, program;
     map<string, vector<unsigned short>> indices;
     map<string, GLuint> tbo;
-    map<string, GLint> ViewMatrixID, MatrixID, ModelMatrixID, KID, LightPositionID;
-    map<string, GLsizei> numberOfVertices, numberOfIndices;
-    map<string, Matrix4f> ViewMatrix, ModelMatrix;
-    Matrix4f ProjectionMatrix;
+    GLint ViewMatrixID, MatrixID, ModelMatrixID, LightPositionID;
+public:
+    Matrix4f ProjectionMatrix, ViewMatrix;
 };

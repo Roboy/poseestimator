@@ -89,8 +89,13 @@ void Mesh::Clear()
     }
 }
 
+bool Mesh::LoadMesh(const std::string &Filename){
+    VectorXf pose(6);
+    pose << 0,0,0,0,0,0;
+    return LoadMesh(Filename, pose);
+}
 
-bool Mesh::LoadMesh(const std::string& Filename)
+bool Mesh::LoadMesh(const std::string& Filename, VectorXf &pose)
 {
     // Release the previously loaded mesh (if it exists)
     Clear();
@@ -102,6 +107,13 @@ bool Mesh::LoadMesh(const std::string& Filename)
     
     if (pScene) {
         Ret = InitFromScene(pScene, Filename);
+        ModelMatrix = Matrix4f::Identity();
+        Matrix3f rot;
+        rot =  AngleAxisf(pose(3), Vector3f::UnitZ()) *
+               AngleAxisf(pose(4), Vector3f::UnitY()) *
+               AngleAxisf(pose(5), Vector3f::UnitX());
+        ModelMatrix.topLeftCorner(3,3) = rot;
+        ModelMatrix.topRightCorner(3,1) << pose(0), pose(1), pose(2);
     }
     else {
         printf("Error parsing '%s': '%s'\n", Filename.c_str(), Importer.GetErrorString());

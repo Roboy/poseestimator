@@ -27,33 +27,64 @@ public:
     }
 
     bool find(const char *file, path *fullFilePath){
-        return find(*p, file, fullFilePath);
+        bool found = false;
+        findFile(*p, file, fullFilePath, found);
+        return found;
     }
 
-    bool find(path filepath, const char *file, path *fullFilePath){
-        try
-        {
-            if (exists(filepath)){    // does p actually exist?
-                if (is_regular_file(filepath))        // is it the fiel we are looking for
-                    if(strcmp(filepath.filename().c_str(),file)==0) {
-                        *fullFilePath = filepath;
-                        return true;
-                    }else
-                        return false;
-                else if (is_directory(filepath))      // is p a directory?
-                {
-                    for(directory_iterator p=directory_iterator(filepath); p!=directory_iterator(); p++)
-                        find(p->path(), file, fullFilePath);
+    void findFile(path filepath, const char *file, path *fullFilePath, bool &found){
+        if(!found) {
+            try {
+                if (exists(filepath)) { // does filepath actually exist?
+                    if (is_regular_file(filepath)) {
+                        if (strcmp(filepath.filename().c_str(), file) == 0) {// is it the file we are looking for
+                            *fullFilePath = filepath;
+                            found = true;
+                            return;
+                        }
+                    }else if (is_directory(filepath)){ // is p a directory?
+                        for (directory_iterator p = directory_iterator(filepath); p != directory_iterator(); p++)
+                            findFile(p->path(), file, fullFilePath, found);
+                    }
+                }
+                else {
+                    cout << "WARNING: " << filepath << " does not exist\n";
+                    return;
                 }
             }
-            else
-                cout << p << " does not exist\n";
+            catch (const filesystem_error &ex) {
+                cout << ex.what() << '\n';
+            }
         }
-        catch (const filesystem_error& ex)
-        {
-            cout << ex.what() << '\n';
-        }
+    }
 
+    void findDirectory(path filepath, const char *directory, path *fullDirectoryPath, bool &found){ // TODO: test this function
+        if(!found) {
+            try {
+                if (exists(filepath)) { // does filepath actually exist?
+                    if (is_directory(filepath)) {
+                        for (directory_iterator p = directory_iterator(filepath); p != directory_iterator(); p++){
+                            if (strcmp(p->path().filename().c_str(), directory) == 0) {// is it the directory we are looking for
+                                *fullDirectoryPath = filepath;
+                                found = true;
+                                return;
+                            }else{
+                                findDirectory(p->path(), directory, fullDirectoryPath, found);
+                            }
+                        }
+                    }else if (is_regular_file(filepath)){ // is p a file?
+                        return;
+                    }
+                }
+                else {
+                    cout << "WARNING: " << filepath << " does not exist\n";
+                    return;
+                }
+            }
+            catch (const filesystem_error &ex) {
+                cout << ex.what() << '\n';
+            }
+        }
     }
 
 private:

@@ -61,10 +61,13 @@ public:
     ~Mesh();
 
     bool LoadMesh(const std::string &Filename);
+    bool LoadMesh(const std::string &Filename, VectorXf &pose);
 
     void Render();
 
     string name = "default name";
+
+    Matrix4f ModelMatrix;
 
 private:
     bool InitFromScene(const aiScene *pScene, const std::string &Filename);

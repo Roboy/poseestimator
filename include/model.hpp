@@ -14,8 +14,11 @@ class Model{
 public:
     Model(const char* rootDirectory, const char* modelFile);
     ~Model();
+    Mat render(VectorXd &pose);
+    Mat render();
+    void updateViewMatrix(sf::Window &window);
+    Renderer *renderer;
 private:
     vector<Mesh*> meshes;
-    Renderer *renderer;
     FileSystem *filesystem;
 };
