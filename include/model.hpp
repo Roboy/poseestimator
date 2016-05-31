@@ -19,8 +19,8 @@ public:
     void render(Mat &img);
     void updateViewMatrix(sf::Window &window);
     Renderer *renderer;
+    Poseestimator *poseestimator;
 private:
     vector<Mesh*> meshes;
     FileSystem *filesystem;
-    Poseestimator *poseestimator;
 };

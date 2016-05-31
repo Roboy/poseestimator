@@ -35,13 +35,13 @@ void cuda_check(string file, int line);
 
 #define CUDA_CHECK cuda_check(__FILE__,__LINE__)
 
-__global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *vertices_out, float3 *normals_out,
-                        float3 *tangents_out, uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in,
-                        float sigma_out, uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot);
+__global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_out, float3 *tangents_out,
+                        uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in, float sigma_out,
+                        uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot);
 
 struct ModelData{
     Matrix4f *ModelMatrix;
-    vector<cudaGraphicsResource*> cuda_vbo_resource;
+    vector<struct cudaGraphicsResource *> cuda_vbo_resource;
     vector<size_t> numberOfVertices;
     vector<float3*> vertices_out;
     vector<float3*> normals_out;
@@ -49,10 +49,10 @@ struct ModelData{
     vector<float3*> d_vertices_out;
     vector<float3*> d_normals_out;
     vector<float3*> d_tangents_out;
-    vector<float*> gradRot;
-    vector<float*> gradTrans;
-    vector<float*> d_gradRot;
-    vector<float*> d_gradTrans;
+    vector<float3*> gradRot;
+    vector<float3*> gradTrans;
+    vector<float3*> d_gradRot;
+    vector<float3*> d_gradTrans;
     ~ModelData(){
         for(auto v:vertices_out)
             delete[] v;
@@ -97,5 +97,5 @@ public:
 private:
     uchar *d_image = NULL, *d_border = NULL, *d_img_out = NULL, *res;
     Timer timer;
-    vector<ModelData> modelData;
+    vector<ModelData*> modelData;
 };

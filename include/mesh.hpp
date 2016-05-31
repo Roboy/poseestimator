@@ -16,6 +16,8 @@
 #include <Eigen/Dense>
 // std
 #include <string>
+// cuda
+#include <vector_types.h>
 
 #define INVALID_OGL_VALUE 0xffffffff
 #define SAFE_DELETE(p) if (p) { delete p; p = NULL; }
@@ -24,17 +26,9 @@ using namespace Eigen;
 using namespace std;
 
 struct Vertex {
-    Vector3f m_pos;
-    Vector2f m_tex;
-    Vector3f m_normal;
-
-    Vertex() { }
-
-    Vertex(const Vector3f &pos, const Vector2f &tex, const Vector3f &normal) {
-        m_pos = pos;
-        m_tex = tex;
-        m_normal = normal;
-    }
+    float3 m_pos;
+    float2 m_tex;
+    float3 m_normal;
 };
 
 class Texture {
