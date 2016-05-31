@@ -103,7 +103,7 @@ void Renderer::renderColor(Mesh *mesh) {
 
 void Renderer::getImage(Mat &img){
     // get the image from opengl buffer
-    GLubyte data[3 * WIDTH * HEIGHT];
+    GLubyte data[4 * WIDTH * HEIGHT]; // it should be 3 because of BGR, but using 3 results in strange border...
     glReadPixels(0, 0, WIDTH, HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, data);
     img = cv::Mat(HEIGHT, WIDTH, CV_8UC3, data);
     flip(img, img, -1);

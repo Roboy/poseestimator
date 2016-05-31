@@ -263,7 +263,7 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
     }
 }
 
-double Poseestimator::iterateOnce(Mat img_camera, Mat img_artificial, VectorXd &pose, VectorXd &grad) {
+double Poseestimator::iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad) {
     Mat img_camera_gray, img_camera_copy, img_artificial_gray, img_artificial_gray2;
     VectorXd initial_pose = pose;
 
@@ -290,7 +290,7 @@ double Poseestimator::iterateOnce(Mat img_camera, Mat img_artificial, VectorXd &
             drawContours(border, contours, idx, 255, 2, 8, hierarchy, 0, cv::Point());
             drawContours(img_camera_copy, contours, idx, cv::Scalar(0, 255, 0), 1, 8, hierarchy, 0, cv::Point());
         }
-        imshow("camera image", img_camera_copy);
+        imshow("camera image overlayed", img_camera_copy);
 
         Mat R_mask = Mat::zeros(HEIGHT, WIDTH, CV_8UC1), Rc_mask,
                 R = Mat::zeros(HEIGHT, WIDTH, CV_8UC1),
@@ -422,7 +422,7 @@ double Poseestimator::iterateOnce(Mat img_camera, Mat img_artificial, VectorXd &
             drawContours(img_camera_gray, contours, idx, 255, 2, 8, hierarchy, 0, cv::Point());
         }
         imshow("img_camera_gray", img_camera_gray);
-        cv::waitKey(1);
+        cv::waitKey(0);
         return energy;
     } else {
         cout << "cannot find any contour" << endl;

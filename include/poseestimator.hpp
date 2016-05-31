@@ -93,7 +93,7 @@ public:
 
     ~Poseestimator();
 
-    double iterateOnce(Mat img_camera, Mat img_artificial, VectorXd &pose, VectorXd &grad);
+    double iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad);
 private:
     uchar *d_image = NULL, *d_border = NULL, *d_img_out = NULL, *res;
     Timer timer;

@@ -7,7 +7,7 @@ int main()
     settings.depthBits = 24;
     settings.stencilBits = 8;
 
-    sf::Window window(sf::VideoMode(WIDTH, HEIGHT, 32), "Transform Feedback", sf::Style::Titlebar | sf::Style::Close, settings);
+    sf::Window window(sf::VideoMode(WIDTH, HEIGHT, 24), "Transform Feedback", sf::Style::Titlebar | sf::Style::Close, settings);
 
     // Initialize GLEW
     glewExperimental = GL_TRUE;
@@ -43,9 +43,9 @@ int main()
         static uint count = 0;
 
         VectorXd pose(6),grad(6);
-        pose << 0,0,-1,degreesToRadians(10),0,0;
+        pose << 0,0,-1,degreesToRadians(50),0,0;
         Mat img_camera;
-        model.render(pose,img_camera);
+        model.render(pose, img_camera);
 
 //        model.updateViewMatrix(window);
 
