@@ -72,6 +72,9 @@ Model::Model(const char* rootDirectory, const char* modelFile) {
     }else {
         cout << "could not find model file: " << modelFile << endl;
     }
+
+    cout << "initializing poseestimator" << endl;
+    poseestimator = new Poseestimator(meshes,renderer->K);
 }
 
 Model::~Model(){

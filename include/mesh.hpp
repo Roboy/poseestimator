@@ -1,13 +1,12 @@
 #pragma once
-
+// glew
+#include <GL/glew.h>
 // image magick
 #define MAGICKCORE_EXCLUDE_DEPRECATED
 #include <Magick++.h>
 #include <iostream>
 #include <map>
 #include <vector>
-// glew
-#include <GL/glew.h>
 // assimp
 #include <assimp/Importer.hpp>      // C++ importer interface
 #include <assimp/scene.h>       // Output data structure
@@ -92,10 +91,12 @@ private:
 
         GLuint VB;
         GLuint IB;
-        unsigned int NumIndices;
+        unsigned long NumIndices;
+        unsigned long NumVertices;
         unsigned int MaterialIndex;
     };
 
+public:
     std::vector<MeshEntry> m_Entries;
     std::vector<Texture *> m_Textures;
 };

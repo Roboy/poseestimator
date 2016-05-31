@@ -7,15 +7,18 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
-// cuda
-#include <device_launch_parameters.h>
-#include <cuda_runtime.h>
 // Eigen
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <string>
 // timer
 #include "timer.hpp"
+// mesh
+#include "mesh.hpp"
+// cuda
+#include <device_launch_parameters.h>
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
 
 using namespace std;
 using namespace Eigen;
@@ -36,19 +39,63 @@ __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *vertice
                         float3 *tangents_out, uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in,
                         float sigma_out, uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot);
 
+struct ModelData{
+    Matrix4f *ModelMatrix;
+    vector<cudaGraphicsResource*> cuda_vbo_resource;
+    vector<size_t> numberOfVertices;
+    vector<float3*> vertices_out;
+    vector<float3*> normals_out;
+    vector<float3*> tangents_out;
+    vector<float3*> d_vertices_out;
+    vector<float3*> d_normals_out;
+    vector<float3*> d_tangents_out;
+    vector<float*> gradRot;
+    vector<float*> gradTrans;
+    vector<float*> d_gradRot;
+    vector<float*> d_gradTrans;
+    ~ModelData(){
+        for(auto v:vertices_out)
+            delete[] v;
+        for(auto n:normals_out)
+            delete[] n;
+        for(auto t:tangents_out)
+            delete[] t;
+        for(auto g:gradRot)
+            delete[] g;
+        for(auto g:gradTrans)
+            delete[] g;
+        for(auto v:d_vertices_out) {
+            cudaFree(v);
+            CUDA_CHECK;
+        }
+        for(auto n:d_normals_out) {
+            cudaFree(n);
+            CUDA_CHECK;
+        }
+        for(auto t:d_tangents_out) {
+            cudaFree(t);
+            CUDA_CHECK;
+        }
+        for(auto g:d_gradRot) {
+            cudaFree(g);
+            CUDA_CHECK;
+        }
+        for(auto g:d_gradTrans) {
+            cudaFree(g);
+            CUDA_CHECK;
+        }
+    }
+};
+
 class Poseestimator {
 public:
-    Poseestimator(uint numberOfVertices, Matrix3f &K);
+    Poseestimator(vector<Mesh*> meshes, Matrix3f &K);
 
     ~Poseestimator();
 
     double iterateOnce(Mat img_camera, Mat img_artificial, VectorXd &pose, VectorXd &grad);
-    float3 *vertices_out, *normals_out, *tangents_out;
-    int m_numberOfVertices = 0;
 private:
-    float3 *d_vertices = NULL, *d_normals = NULL, *d_vertices_out = NULL, *d_normals_out = NULL, *d_tangents_out = NULL,
-            *d_gradTrans = NULL, *d_gradRot = NULL;
     uchar *d_image = NULL, *d_border = NULL, *d_img_out = NULL, *res;
-    float3 *gradTrans, *gradRot;
     Timer timer;
+    vector<ModelData> modelData;
 };
