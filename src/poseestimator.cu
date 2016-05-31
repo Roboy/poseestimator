@@ -82,13 +82,13 @@ Poseestimator::~Poseestimator() {
     delete[] gradRot;
 }
 
-void Poseestimator::copyDataToGPU(){
-    // copy vertices and normals to gpu
-    cudaMemcpy(d_vertices, vertices.data(), m_numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
-    CUDA_CHECK;
-    cudaMemcpy(d_normals, normals.data(), m_numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
-    CUDA_CHECK;
-}
+//void Poseestimator::copyDataToGPU(){
+//    // copy vertices and normals to gpu
+//    cudaMemcpy(d_vertices, vertices.data(), m_numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
+//    CUDA_CHECK;
+//    cudaMemcpy(d_normals, normals.data(), m_numberOfVertices * sizeof(float3), cudaMemcpyHostToDevice);
+//    CUDA_CHECK;
+//}
 
 __global__ void costFcn(float3 *vertices_in, float3 *normals_in, float3 *vertices_out, float3 *normals_out,
                         float3 *tangents_out, uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in,
@@ -323,29 +323,29 @@ double Poseestimator::iterateOnce(Mat img_camera, Mat img_artificial, VectorXd &
         cudaMemcpyToSymbol(c_cameraPose, &cameraPose(0, 0), 16 * sizeof(float));
 
         dim3 block = dim3(1, 1, 1);
-        dim3 grid = dim3(numberOfVertices / block.x, 1, 1);
+        dim3 grid = dim3(m_numberOfVertices / block.x, 1, 1);
 
         costFcn << < grid, block >> >
                            (d_vertices, d_normals, d_vertices_out, d_normals_out, d_tangents_out, d_border, d_image, mu_in, mu_out,
-                                   sigma_in, sigma_out, d_img_out, numberOfVertices, d_gradTrans, d_gradRot);
+                                   sigma_in, sigma_out, d_img_out, m_numberOfVertices, d_gradTrans, d_gradRot);
         CUDA_CHECK;
 
         // copy data from gpu to cpu
         cudaMemcpy(res, d_img_out, WIDTH * HEIGHT * sizeof(uchar), cudaMemcpyDeviceToHost);
         CUDA_CHECK;
-        cudaMemcpy(vertices_out, d_vertices_out, numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
+        cudaMemcpy(vertices_out, d_vertices_out, m_numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
         CUDA_CHECK;
-        cudaMemcpy(normals_out, d_normals_out, numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
+        cudaMemcpy(normals_out, d_normals_out, m_numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
         CUDA_CHECK;
-        cudaMemcpy(tangents_out, d_tangents_out, numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
+        cudaMemcpy(tangents_out, d_tangents_out, m_numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
         CUDA_CHECK;
-        cudaMemcpy(gradTrans, d_gradTrans, numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
+        cudaMemcpy(gradTrans, d_gradTrans, m_numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
         CUDA_CHECK;
-        cudaMemcpy(gradRot, d_gradRot, numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
+        cudaMemcpy(gradRot, d_gradRot, m_numberOfVertices * sizeof(float3), cudaMemcpyDeviceToHost);
         CUDA_CHECK;
 
         grad << 0, 0, 0, 0, 0, 0;
-        for (uint i = 0; i < numberOfVertices; i++) {
+        for (uint i = 0; i < m_numberOfVertices; i++) {
 //                cout << "v: " << vertices_out[i].x << " " << vertices_out[i].y << " " << vertices_out[i].z << endl;
 //                cout << "n: " << normals_out[i].x << " " << normals_out[i].y << " " << normals_out[i].z << endl;
 //                cout << "g: " << gradTrans[i].x << " " << gradTrans[i].y << " " << gradTrans[i].z << endl;

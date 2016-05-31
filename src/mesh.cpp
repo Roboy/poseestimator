@@ -110,9 +110,9 @@ bool Mesh::LoadMesh(const std::string& Filename, VectorXf &pose)
         Ret = InitFromScene(pScene, Filename);
         ModelMatrix = Matrix4f::Identity();
         Matrix3f rot;
-        rot =  AngleAxisf(pose(3), Vector3f::UnitZ()) *
+        rot =  AngleAxisf(pose(3), Vector3f::UnitX()) *
                AngleAxisf(pose(4), Vector3f::UnitY()) *
-               AngleAxisf(pose(5), Vector3f::UnitX());
+               AngleAxisf(pose(5), Vector3f::UnitZ());
         ModelMatrix.topLeftCorner(3,3) = rot;
         ModelMatrix.topRightCorner(3,1) << pose(0), pose(1), pose(2);
     }

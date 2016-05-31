@@ -22,5 +22,5 @@ public:
 private:
     vector<Mesh*> meshes;
     FileSystem *filesystem;
-    Poseestimator poseestimator(renderer.vertices[obj], renderer.normals[obj], renderer.K);
+//    Poseestimator poseestimator(renderer.vertices[obj], renderer.normals[obj], renderer.K);
 };
