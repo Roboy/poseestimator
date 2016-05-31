@@ -1,0 +1,103 @@
+<?xml version='1.0'?>
+<sdf version='1.5'>
+  <model name='roboy'>
+    <link name='roboy_torso'>
+      <pose frame=''>0 0 0 0 0 0</pose>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://roboy_simplified/dae/p-torso-v04.dae</uri>
+          </mesh>
+        </geometry>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+    <link name='roboy_face'>
+      <pose frame=''>0 0.1 0 0 -0 0</pose>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://roboy_simplified/dae/121213_PROTOTYP_Kopf-Vorderteil.dae</uri>
+          </mesh>
+        </geometry>
+        <pose frame=''>0 0.1 0 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+    <link name='roboy_head'>
+      <pose frame=''>0 0.1 0 0 -0 0</pose>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://roboy_simplified/dae/121213_PROTOTYP_Kopf-Hinterteil.dae</uri>
+          </mesh>
+        </geometry>
+        <pose frame=''>0 0.1 0 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+    <link name='roboy_left_thigh'>
+      <pose frame=''>0.1 -0.25 0 0 3.14 0</pose>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://roboy_simplified/dae/p-oberschenkel-v02.dae</uri>
+          </mesh>
+        </geometry>
+        <pose frame=''>0 0.1 0 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+    <link name='roboy_right_thigh'>
+      <pose frame=''>-0.1 -0.25 0 0 0 0</pose>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://roboy_simplified/dae/p-oberschenkel-v02.dae</uri>
+          </mesh>
+        </geometry>
+        <pose frame=''>0 0.1 0 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+    <link name='roboy_left_upper_arm'>
+      <pose frame=''>0.2 0 0 0 0 0</pose>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://roboy_simplified/dae/p-oberarm-1-v02.dae</uri>
+          </mesh>
+        </geometry>
+        <pose frame=''>0 0.1 0 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+    <link name='roboy_right_upper_arm'>
+      <pose frame=''>-0.2 0 0 0 0 0</pose>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://roboy_simplified/dae/p-oberarm-1-v02.dae</uri>
+          </mesh>
+        </geometry>
+        <pose frame=''>0 0.1 0 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+  </model>
+</sdf>

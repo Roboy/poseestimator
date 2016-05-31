@@ -39,6 +39,9 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
                         uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in, float sigma_out,
                         uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot);
 
+
+__global__ void deviceParSum(float3 *grad, int numberOfVertices, float* gradSum);
+
 struct ModelData{
     Matrix4f *ModelMatrix;
     vector<struct cudaGraphicsResource *> cuda_vbo_resource;
@@ -93,8 +96,9 @@ public:
 
     ~Poseestimator();
 
-    double iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad);
+    double iterateOnce(const Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad);
 private:
+    float *d_gradient = NULL;
     uchar *d_image = NULL, *d_border = NULL, *d_img_out = NULL, *res;
     Timer timer;
     vector<ModelData*> modelData;

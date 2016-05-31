@@ -74,6 +74,8 @@ Poseestimator::Poseestimator(vector<Mesh*> meshes, Matrix3f &K){
         modelData.push_back(m);
     }
 
+    cudaMalloc(&d_gradient, 6 * sizeof(float));
+    CUDA_CHECK;
     cudaMalloc(&d_border, WIDTH * HEIGHT * sizeof(uchar));
     CUDA_CHECK;
     cudaMalloc(&d_img_out, WIDTH * HEIGHT * sizeof(uchar));
@@ -93,7 +95,8 @@ Poseestimator::~Poseestimator() {
     CUDA_CHECK;
     cudaFree(d_image);
     CUDA_CHECK;
-
+    cudaFree(d_gradient);
+    CUDA_CHECK;
     delete[] res;
 
     for(auto m:modelData)
@@ -102,7 +105,7 @@ Poseestimator::~Poseestimator() {
 
 __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_out,
                         float3 *tangents_out, uchar *border, uchar *image, float mu_in, float mu_out, float sigma_in,
-                        float sigma_out, uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot) {
+                        float sigma_out, uchar *img_out, int numberOfVertices, float3 *gradTrans, float3 *gradRot, float* grad) {
     // iteration over image is parallelized
     int idx = threadIdx.x + blockDim.x * blockIdx.x;
     if (idx < numberOfVertices) {
@@ -228,7 +231,7 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
         pixelCoord.y = (int) pixel.y / pixel.z;
         // if its a border pixel and the dot product small enough
         if (pixelCoord.x >= 0 && pixelCoord.x < WIDTH && pixelCoord.y >= 0 && pixelCoord.y < HEIGHT &&
-            (dot < 0.1f && dot > -0.1f) && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {
+            fabsf(dot)< 0.1f && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {//
             img_out[pixelCoord.y * WIDTH + pixelCoord.x] = 255;
             float Rc = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out) *
                         ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out)) / sigma_out;
@@ -239,9 +242,9 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
 
-            float Om[9] = {0, pos.z, -pos.y,
-                           -pos.z, 0, pos.x,
-                           pos.y, -pos.x, 0};
+            float Om[9] = {0, posModel.z, -posModel.y,
+                           -posModel.z, 0, posModel.x,
+                           posModel.y, -posModel.x, 0};
             float M[9] = {0, 0, 0,
                           0, 0, 0,
                           0, 0, 0};
@@ -263,12 +266,45 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
     }
 }
 
-double Poseestimator::iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad) {
+__global__ void deviceParSum(float3 *grad, int numberOfVertices, float* gradSum)
+{
+    size_t idx =  threadIdx.x + blockDim.x * blockIdx.x;
+
+    /* load into shared memory*/
+    extern __shared__ float3 s_data[];
+    float3 s;
+    s.x = 0; s.y = 0; s.z = 0;
+    if(idx < numberOfVertices) {
+        s = grad[idx];
+    }
+    s_data[threadIdx.x] = s;
+    __syncthreads();
+
+    /* sum the block */
+    for(size_t offset = blockDim.x / 2; offset > 0; offset /= 2) {
+        if(threadIdx.x < offset) {
+            s_data[threadIdx.x].x += s_data[threadIdx.x + offset].x;
+            s_data[threadIdx.x].y += s_data[threadIdx.x + offset].y;
+            s_data[threadIdx.x].z += s_data[threadIdx.x + offset].z;
+        }
+        __syncthreads();
+    }
+
+    /* write result to global memory */
+    if(threadIdx.x == 0) {
+        gradSum[0] = s_data[0].x;
+        gradSum[1] = s_data[0].y;
+        gradSum[2] = s_data[0].z;
+    }
+}
+
+double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad) {
+    timer.start();
     Mat img_camera_gray, img_camera_copy, img_artificial_gray, img_artificial_gray2;
     VectorXd initial_pose = pose;
 
     img_camera.copyTo(img_camera_copy);
-    cvtColor(img_camera, img_camera_gray, CV_BGR2GRAY);
+    cvtColor(img_camera_copy, img_camera_gray, CV_BGR2GRAY);
     cvtColor(img_artificial, img_artificial_gray, CV_BGR2GRAY);
     // make a copy
     img_artificial_gray.copyTo(img_artificial_gray2);
@@ -287,10 +323,12 @@ double Poseestimator::iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd
     if (contours.size() > 0) {
         Mat border = Mat::zeros(HEIGHT, WIDTH, CV_8UC1);
         for (int idx = 0; idx < contours.size(); idx++) {
-            drawContours(border, contours, idx, 255, 2, 8, hierarchy, 0, cv::Point());
+            drawContours(border, contours, idx, 255, 1, 8, hierarchy, 0, cv::Point());
             drawContours(img_camera_copy, contours, idx, cv::Scalar(0, 255, 0), 1, 8, hierarchy, 0, cv::Point());
         }
-        imshow("camera image overlayed", img_camera_copy);
+        imshow("camera image", img_camera_copy);
+
+        cout << "time for finding silhuette: " << timer.elapsedTimeMilliSeconds() << " ms" << endl;
 
         Mat R_mask = Mat::zeros(HEIGHT, WIDTH, CV_8UC1), Rc_mask,
                 R = Mat::zeros(HEIGHT, WIDTH, CV_8UC1),
@@ -316,7 +354,6 @@ double Poseestimator::iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd
         Mat Rpow = Mat::zeros(HEIGHT, WIDTH, CV_32FC1), Rcpow = Mat::zeros(HEIGHT, WIDTH, CV_32FC1);
         R.copyTo(Rpow, R_mask);
         Rc.copyTo(Rcpow, Rc_mask);
-
 
         pow(Rpow, 2.0, Rpow);
         pow(Rcpow, 2.0, Rcpow);
@@ -358,13 +395,15 @@ double Poseestimator::iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd
 
         grad << 0, 0, 0, 0, 0, 0;
 
+        timer.start();
+
         for(uint i=0;i<modelData.size();i++) {
             for(uint j=0;j<modelData[i]->cuda_vbo_resource.size();j++) {
                 // set modelPose on gpu
                 cudaMemcpyToSymbol(c_modelPose, &(*modelData[i]->ModelMatrix)(0,0), 16 * sizeof(float));
 
                 dim3 block = dim3(1, 1, 1);
-                dim3 grid = dim3(modelData[i]->numberOfVertices[j] / block.x, 1, 1);
+                dim3 grid = dim3(modelData[i]->numberOfVertices[j], 1, 1);
 
                 // map OpenGL buffer object for writing from CUDA
                 Vertex *vertices;
@@ -376,53 +415,66 @@ double Poseestimator::iterateOnce(Mat &img_camera, Mat &img_artificial, VectorXd
 
                 costFcn <<< grid, block >>> ( vertices, modelData[i]->d_vertices_out[j], modelData[i]->d_normals_out[j], modelData[i]->d_tangents_out[j],
                                               d_border, d_image, mu_in, mu_out, sigma_in, sigma_out, d_img_out, modelData[i]->numberOfVertices[j],
-                                              modelData[i]->d_gradTrans[j], modelData[i]->d_gradRot[j]);
+                                              modelData[i]->d_gradTrans[j], modelData[i]->d_gradRot[j], d_gradient);
                 CUDA_CHECK;
 
                 // unmap buffer object
                 cudaGraphicsUnmapResources(1, &modelData[i]->cuda_vbo_resource[j], 0);
                 CUDA_CHECK;
 
-                cudaMemcpy( modelData[i]->vertices_out[j],  modelData[i]->d_vertices_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+                dim3 blockSum = dim3(1024,1,1);
+                dim3 gridSum = dim3((modelData[i]->numberOfVertices[j] + blockSum.x-1) / blockSum.x,1,1);
+
+                deviceParSum <<< gridSum, blockSum, blockSum.x * sizeof(float3)>>> ( modelData[i]->d_gradTrans[j], modelData[i]->numberOfVertices[j], d_gradient);
                 CUDA_CHECK;
-                cudaMemcpy( modelData[i]->normals_out[j],  modelData[i]->d_normals_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
-                CUDA_CHECK;
-                cudaMemcpy( modelData[i]->tangents_out[j],  modelData[i]->d_tangents_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
-                CUDA_CHECK;
-                cudaMemcpy( modelData[i]->gradTrans[j],  modelData[i]->d_gradTrans[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
-                CUDA_CHECK;
-                cudaMemcpy( modelData[i]->gradRot[j],  modelData[i]->d_gradRot[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+                deviceParSum <<< gridSum, blockSum, blockSum.x * sizeof(float3)>>> ( modelData[i]->d_gradRot[j], modelData[i]->numberOfVertices[j], &d_gradient[3]);
                 CUDA_CHECK;
 
-                for (uint k = 0; k <  modelData[i]->numberOfVertices[j]; k++) {
+//                cudaMemcpy( modelData[i]->vertices_out[j],  modelData[i]->d_vertices_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+//                CUDA_CHECK;
+//                cudaMemcpy( modelData[i]->normals_out[j],  modelData[i]->d_normals_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+//                CUDA_CHECK;
+//                cudaMemcpy( modelData[i]->tangents_out[j],  modelData[i]->d_tangents_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+//                CUDA_CHECK;
+
+
+                float gradient[6];
+                cudaMemcpy( gradient,  d_gradient, 6 * sizeof(float), cudaMemcpyDeviceToHost);
+                CUDA_CHECK;
+
+                grad(0) += gradient[0];
+                grad(1) += gradient[1];
+                grad(2) += gradient[2];
+                grad(3) += gradient[3];
+                grad(4) += gradient[4];
+                grad(5) += gradient[5];
+
+//                for (uint k = 0; k <  modelData[i]->numberOfVertices[j]; k++) {
 //                cout << "v: " << vertices_out[i].x << " " << vertices_out[i].y << " " << vertices_out[i].z << endl;
 //                cout << "n: " << normals_out[i].x << " " << normals_out[i].y << " " << normals_out[i].z << endl;
 //                cout << "g: " << gradTrans[i].x << " " << gradTrans[i].y << " " << gradTrans[i].z << endl;
 //                cout << "g: " << gradRot[i].x << " " << gradRot[i].y << " " << gradRot[i].z << endl;
 //                Vector3f n(normals_out[i].x, normals_out[i].y, normals_out[i].z);
 //                cout << n.norm() << endl;
-                    grad(0) += modelData[i]->gradTrans[j][k].x;
-                    grad(1) += modelData[i]->gradTrans[j][k].y;
-                    grad(2) += modelData[i]->gradTrans[j][k].z;
-                    grad(3) += modelData[i]->gradRot[j][k].x;
-                    grad(4) += modelData[i]->gradRot[j][k].y;
-                    grad(5) += modelData[i]->gradRot[j][k].z;
-                }
+//                    grad(0) += modelData[i]->gradTrans[j][k].x;
+//                    grad(1) += modelData[i]->gradTrans[j][k].y;
+//                    grad(2) += modelData[i]->gradTrans[j][k].z;
+//                    grad(3) += modelData[i]->gradRot[j][k].x;
+//                    grad(4) += modelData[i]->gradRot[j][k].y;
+//                    grad(5) += modelData[i]->gradRot[j][k].z;
+//                }
             }
         }
 
-        // copy data from gpu to cpu
-        cudaMemcpy(res, d_img_out, WIDTH * HEIGHT * sizeof(uchar), cudaMemcpyDeviceToHost);
-        CUDA_CHECK;
+        cout << "time for cuda: " << timer.elapsedTimeMilliSeconds() << " ms" << endl;
 
-        Mat img(HEIGHT, WIDTH, CV_8UC1, res);
-        imshow("result", img);
+//        // copy data from gpu to cpu
+//        cudaMemcpy(res, d_img_out, WIDTH * HEIGHT * sizeof(uchar), cudaMemcpyDeviceToHost);
+//        CUDA_CHECK;
+//
+//        Mat img(HEIGHT, WIDTH, CV_8UC1, res);
+//        imshow("result", img);
 
-        for (int idx = 0; idx < contours.size(); idx++) {
-            drawContours(img_camera_gray, contours, idx, 255, 2, 8, hierarchy, 0, cv::Point());
-        }
-        imshow("img_camera_gray", img_camera_gray);
-        cv::waitKey(0);
         return energy;
     } else {
         cout << "cannot find any contour" << endl;
