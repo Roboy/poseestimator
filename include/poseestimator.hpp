@@ -19,6 +19,8 @@
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 
+//#define VISUALIZE
+
 using namespace std;
 using namespace Eigen;
 using cv::Mat;

@@ -172,25 +172,46 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
         vertices_out[idx] = pos;
 
         // calculate orientation of normal in camera coordinate system
-        float3 normal;
+        float3 normal, normalModel;
+        normalModel.x = 0.0f;
+        normalModel.y = 0.0f;
+        normalModel.z = 0.0f;
+
+        // modelPose
+        // x
+        normalModel.x += c_cameraPose[0 + 4 * 0] * n.x;
+        normalModel.x += c_cameraPose[0 + 4 * 1] * n.y;
+        normalModel.x += c_cameraPose[0 + 4 * 2] * n.z;
+
+        // y
+        normalModel.y += c_cameraPose[1 + 4 * 0] * n.x;
+        normalModel.y += c_cameraPose[1 + 4 * 1] * n.y;
+        normalModel.y += c_cameraPose[1 + 4 * 2] * n.z;
+
+        // z
+        normalModel.z += c_cameraPose[2 + 4 * 0] * n.x;
+        normalModel.z += c_cameraPose[2 + 4 * 1] * n.y;
+        normalModel.z += c_cameraPose[2 + 4 * 2] * n.z;
+
+        // cameraPose
         normal.x = 0.0f;
         normal.y = 0.0f;
         normal.z = 0.0f;
 
         // x
-        normal.x += c_cameraPose[0 + 4 * 0] * n.x;
-        normal.x += c_cameraPose[0 + 4 * 1] * n.y;
-        normal.x += c_cameraPose[0 + 4 * 2] * n.z;
+        normal.x += c_cameraPose[0 + 4 * 0] * normalModel.x;
+        normal.x += c_cameraPose[0 + 4 * 1] * normalModel.y;
+        normal.x += c_cameraPose[0 + 4 * 2] * normalModel.z;
 
         // y
-        normal.y += c_cameraPose[1 + 4 * 0] * n.x;
-        normal.y += c_cameraPose[1 + 4 * 1] * n.y;
-        normal.y += c_cameraPose[1 + 4 * 2] * n.z;
+        normal.y += c_cameraPose[1 + 4 * 0] * normalModel.x;
+        normal.y += c_cameraPose[1 + 4 * 1] * normalModel.y;
+        normal.y += c_cameraPose[1 + 4 * 2] * normalModel.z;
 
         // z
-        normal.z += c_cameraPose[2 + 4 * 0] * n.x;
-        normal.z += c_cameraPose[2 + 4 * 1] * n.y;
-        normal.z += c_cameraPose[2 + 4 * 2] * n.z;
+        normal.z += c_cameraPose[2 + 4 * 0] * normalModel.x;
+        normal.z += c_cameraPose[2 + 4 * 1] * normalModel.y;
+        normal.z += c_cameraPose[2 + 4 * 2] * normalModel.z;
 
         normals_out[idx] = normal;
 
@@ -242,9 +263,9 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
 
-            float Om[9] = {0, posModel.z, -posModel.y,
-                           -posModel.z, 0, posModel.x,
-                           posModel.y, -posModel.x, 0};
+            float Om[9] = {0, -posModel.z, posModel.y,
+                           posModel.z, 0, -posModel.x,
+                           -posModel.y, posModel.x, 0};
             float M[9] = {0, 0, 0,
                           0, 0, 0,
                           0, 0, 0};
@@ -253,7 +274,7 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
                 for (uint j = 0; j < 3; j++)
                     for (uint k = 0; k < 3; k++)
                         M[i + 3 * j] += c_cameraPose[i + 4 * k] * Om[k + 3 * j];
-            statistics *= posNorm / (pos.z * pos.z * pos.z);
+            statistics =  posNorm / (pos.z * pos.z * pos.z);
             gradRot[idx].x = statistics * (M[0 + 3 * 0] * normal.x + M[1 + 3 * 0] * normal.y + M[2 + 3 * 0] * normal.z);
             gradRot[idx].y = statistics * (M[0 + 3 * 1] * normal.x + M[1 + 3 * 1] * normal.y + M[2 + 3 * 1] * normal.z);
             gradRot[idx].z = statistics * (M[0 + 3 * 2] * normal.x + M[1 + 3 * 2] * normal.y + M[2 + 3 * 2] * normal.z);
@@ -321,10 +342,13 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
     }
     if (contours.size() > 0) {
         Mat border = Mat::zeros(HEIGHT, WIDTH, CV_8UC1);
+        double A_in = 0;
         for (int idx = 0; idx < contours.size(); idx++) {
             drawContours(border, contours, idx, 255, 1, 8, hierarchy, 0, cv::Point());
+            A_in += contourArea(contours[idx]);
             drawContours(img_camera_copy, contours, idx, cv::Scalar(0, 255, 0), 1, 8, hierarchy, 0, cv::Point());
         }
+        double A_out = WIDTH * HEIGHT - A_in;
         imshow("camera image", img_camera_copy);
 
         Mat R_mask = Mat::zeros(HEIGHT, WIDTH, CV_8UC1), Rc_mask,
@@ -334,18 +358,20 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
         bitwise_not(R_mask, Rc_mask);
 
         // this will mask out the respective part of the webcam image
-        bitwise_and(img_artificial_gray2, R_mask, R);
-        bitwise_and(img_artificial_gray2, Rc_mask, Rc);
+        bitwise_and(img_camera_gray, R_mask, R);
+        bitwise_and(img_camera_gray, Rc_mask, Rc);
 
         // convert camera image to float
         R.convertTo(R, CV_32FC1);
         Rc.convertTo(Rc, CV_32FC1);
-        double A_in = contourArea(contours[0]);
-        double A_out = WIDTH * HEIGHT - A_in;
+
         double mu_in = sum(R).val[0] / A_in;
         double mu_out = sum(Rc).val[0] / A_out;
         R = R - mu_in;
         Rc = Rc - mu_out;
+
+        imshow("R", R/255.0f);
+        imshow("Rc", Rc/255.0f);
 
         // copy only the respective areas
         Mat Rpow = Mat::zeros(HEIGHT, WIDTH, CV_32FC1), Rcpow = Mat::zeros(HEIGHT, WIDTH, CV_32FC1);
@@ -419,13 +445,6 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
                 cudaGraphicsUnmapResources(1, &modelData[i]->cuda_vbo_resource[j], 0);
                 CUDA_CHECK;
 
-                dim3 blockSum = dim3(1024,1,1);
-                dim3 gridSum = dim3((modelData[i]->numberOfVertices[j] + blockSum.x-1) / blockSum.x,1,1);
-
-                deviceParSum <<< gridSum, blockSum, blockSum.x * sizeof(float3)>>> ( modelData[i]->d_gradTrans[j], modelData[i]->numberOfVertices[j], d_gradient);
-                CUDA_CHECK;
-                deviceParSum <<< gridSum, blockSum, blockSum.x * sizeof(float3)>>> ( modelData[i]->d_gradRot[j], modelData[i]->numberOfVertices[j], &d_gradient[3]);
-                CUDA_CHECK;
 #ifdef VISUALIZE
                 cudaMemcpy( modelData[i]->vertices_out[j],  modelData[i]->d_vertices_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
                 CUDA_CHECK;
@@ -435,31 +454,45 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
                 CUDA_CHECK;
 #endif
 
-                float gradient[6];
-                cudaMemcpy( gradient,  d_gradient, 6 * sizeof(float), cudaMemcpyDeviceToHost);
+//                dim3 blockSum = dim3(1024,1,1);
+//                dim3 gridSum = dim3((modelData[i]->numberOfVertices[j] + blockSum.x-1) / blockSum.x,1,1);
+//
+//                deviceParSum <<< gridSum, blockSum, blockSum.x * sizeof(float3)>>> ( modelData[i]->d_gradTrans[j], modelData[i]->numberOfVertices[j], d_gradient);
+//                CUDA_CHECK;
+//                deviceParSum <<< gridSum, blockSum, blockSum.x * sizeof(float3)>>> ( modelData[i]->d_gradRot[j], modelData[i]->numberOfVertices[j], &d_gradient[3]);
+//                CUDA_CHECK;
+//
+//
+//                float gradient[6];
+//                cudaMemcpy( gradient,  d_gradient, 6 * sizeof(float), cudaMemcpyDeviceToHost);
+//                CUDA_CHECK;
+//
+//                grad(0) += gradient[0];
+//                grad(1) += gradient[1];
+//                grad(2) += gradient[2];
+//                grad(3) += gradient[3];
+//                grad(4) += gradient[4];
+//                grad(5) += gradient[5];
+
+                cudaMemcpy(modelData[i]->gradTrans[j], modelData[i]->d_gradTrans[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+                CUDA_CHECK;
+                cudaMemcpy(modelData[i]->gradRot[j], modelData[i]->d_gradRot[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
                 CUDA_CHECK;
 
-                grad(0) += gradient[0];
-                grad(1) += gradient[1];
-                grad(2) += gradient[2];
-                grad(3) += gradient[3];
-                grad(4) += gradient[4];
-                grad(5) += gradient[5];
-
-//                for (uint k = 0; k <  modelData[i]->numberOfVertices[j]; k++) {
+                for (uint k = 0; k <  modelData[i]->numberOfVertices[j]; k++) {
 //                cout << "v: " << vertices_out[i].x << " " << vertices_out[i].y << " " << vertices_out[i].z << endl;
 //                cout << "n: " << normals_out[i].x << " " << normals_out[i].y << " " << normals_out[i].z << endl;
 //                cout << "g: " << gradTrans[i].x << " " << gradTrans[i].y << " " << gradTrans[i].z << endl;
 //                cout << "g: " << gradRot[i].x << " " << gradRot[i].y << " " << gradRot[i].z << endl;
 //                Vector3f n(normals_out[i].x, normals_out[i].y, normals_out[i].z);
 //                cout << n.norm() << endl;
-//                    grad(0) += modelData[i]->gradTrans[j][k].x;
-//                    grad(1) += modelData[i]->gradTrans[j][k].y;
-//                    grad(2) += modelData[i]->gradTrans[j][k].z;
-//                    grad(3) += modelData[i]->gradRot[j][k].x;
-//                    grad(4) += modelData[i]->gradRot[j][k].y;
-//                    grad(5) += modelData[i]->gradRot[j][k].z;
-//                }
+                    grad(0) += modelData[i]->gradTrans[j][k].x;
+                    grad(1) += modelData[i]->gradTrans[j][k].y;
+                    grad(2) += modelData[i]->gradTrans[j][k].z;
+                    grad(3) += modelData[i]->gradRot[j][k].x;
+                    grad(4) += modelData[i]->gradRot[j][k].y;
+                    grad(5) += modelData[i]->gradRot[j][k].z;
+                }
             }
         }
 

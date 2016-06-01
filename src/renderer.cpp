@@ -12,13 +12,28 @@ Renderer::Renderer(const char *rootDirectory) {
     loadShaderCodeFromFile(file, src);
     compileShader(src, GL_FRAGMENT_SHADER, shader["color_fragment"]);
 
+    sprintf(file, "%s/shader/color.vertexshader", rootDirectory);
+    loadShaderCodeFromFile(file, src);
+    compileShader(src, GL_VERTEX_SHADER, shader["color_vertex_simple"]);
+
+    sprintf(file, "%s/shader/color_simple.fragmentshader", rootDirectory);
+    loadShaderCodeFromFile(file, src);
+    compileShader(src, GL_FRAGMENT_SHADER, shader["color_fragment_simple"]);
+
     if (createRenderProgram(shader["color_vertex"], shader["color_fragment"], program["color"]) == GL_FALSE)
         return;
+    if (createRenderProgram(shader["color_vertex_simple"], shader["color_fragment_simple"], program["color_simple"]) == GL_FALSE)
+        return;
 
-    MatrixID = glGetUniformLocation(program["color"], "MVP");
-    ViewMatrixID = glGetUniformLocation(program["color"], "ViewMatrix");
-    ModelMatrixID= glGetUniformLocation(program["color"], "ModelMatrix");
-    LightPositionID = glGetUniformLocation(program["color"], "LightPosition_worldspace");
+    MatrixID["color"] = glGetUniformLocation(program["color"], "MVP");
+    ViewMatrixID["color"] = glGetUniformLocation(program["color"], "ViewMatrix");
+    ModelMatrixID["color"] = glGetUniformLocation(program["color"], "ModelMatrix");
+    LightPositionID["color"] = glGetUniformLocation(program["color"], "LightPosition_worldspace");
+
+    MatrixID["color_simple"] = glGetUniformLocation(program["color_simple"], "MVP");
+    ViewMatrixID["color_simple"] = glGetUniformLocation(program["color_simple"], "ViewMatrix");
+    ModelMatrixID["color_simple"] = glGetUniformLocation(program["color_simple"], "ModelMatrix");
+    LightPositionID["color_simple"] = glGetUniformLocation(program["color_simple"], "LightPosition_worldspace");
 
     Mat cameraMatrix, distCoeffs;
     sprintf(file, "%s/intrinsics.xml", rootDirectory);
@@ -38,7 +53,7 @@ Renderer::Renderer(const char *rootDirectory) {
     ViewMatrix.topRightCorner(3,1) << 0,0,-1;
 
     float n = 0.01; // near field
-    float f = 100; // far field
+    float f = 1000; // far field
     ProjectionMatrix << cameraMatrix.at<double>(0, 0) / cameraMatrix.at<double>(0, 2), 0.0, 0.0, 0.0,
             0.0, cameraMatrix.at<double>(1, 1) / cameraMatrix.at<double>(1, 2), 0.0, 0.0,
             0.0, 0.0, -(f + n) / (f - n), (-2.0f * f * n) / (f - n),
@@ -49,7 +64,7 @@ Renderer::Renderer(const char *rootDirectory) {
     cout << "K\n" << K << endl;
     Kinv = K.inverse();
 
-    // background ccolor
+    // background color
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     // Enable depth test
     glEnable(GL_DEPTH_TEST);
@@ -66,7 +81,7 @@ Renderer::~Renderer() {
         glDeleteBuffers(1, &t.second);
 }
 
-void Renderer::renderColor(Mesh *mesh, VectorXd &pose) {
+void Renderer::renderColor(Mesh *mesh, VectorXd &pose, string program) {
     Matrix3f rot = Matrix3f::Identity();
     Vector3f p(pose(3), pose(4), pose(5));
     float angle = p.norm();
@@ -83,20 +98,21 @@ void Renderer::renderColor(Mesh *mesh, VectorXd &pose) {
     ViewMatrix.topLeftCorner(3,3) = rot;
     ViewMatrix.topRightCorner(3,1) << pose(0), pose(1), pose(2);
 
-    renderColor(mesh);
+    renderColor(mesh, program);
 }
 
-void Renderer::renderColor(Mesh *mesh) {
+void Renderer::renderColor(Mesh *mesh, string programName) {
     Eigen::Matrix4f MVP = ProjectionMatrix * ViewMatrix * mesh->ModelMatrix;
 
-    glUseProgram(program["color"]);
-    glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &ViewMatrix(0, 0));
-    glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP(0, 0));
-    glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &mesh->ModelMatrix(0, 0));
-    Vector3f lightPosition(0,-4,1);
-    lightPosition = ViewMatrix.topRightCorner(3,1);
-//    printf("%.4f %.4f %.4f\n", lightPosition(0), lightPosition(1), lightPosition(2));
-    glUniform3fv(LightPositionID, 1, &lightPosition(0));
+    // background color
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+    glUseProgram(program[programName]);
+    glUniformMatrix4fv(ViewMatrixID[programName], 1, GL_FALSE, &ViewMatrix(0, 0));
+    glUniformMatrix4fv(MatrixID[programName], 1, GL_FALSE, &MVP(0, 0));
+    glUniformMatrix4fv(ModelMatrixID[programName], 1, GL_FALSE, &mesh->ModelMatrix(0, 0));
+    Vector3f lightPosition(0,0,-1);
+    glUniform3fv(LightPositionID[programName], 1, &lightPosition(0));
 
     mesh->Render();
 }

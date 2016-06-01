@@ -1,6 +1,6 @@
 #include "model.hpp"
 
-Model::Model(const char* rootDirectory, const char* modelFile) {
+Model::Model(const char* rootDirectory, const char* modelFile, bool withPoseEstimation) {
     filesystem = new FileSystem(rootDirectory);
 
     renderer = new Renderer(rootDirectory);
@@ -73,8 +73,10 @@ Model::Model(const char* rootDirectory, const char* modelFile) {
         cout << "could not find model file: " << modelFile << endl;
     }
 
-    cout << "initializing poseestimator" << endl;
-    poseestimator = new Poseestimator(meshes,renderer->K);
+    if(withPoseEstimation) {
+        cout << "initializing poseestimator" << endl;
+        poseestimator = new Poseestimator(meshes, renderer->K);
+    }
 }
 
 Model::~Model(){
@@ -84,18 +86,20 @@ Model::~Model(){
     delete filesystem;
 }
 
-void Model::render(VectorXd &pose, Mat &img){
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void Model::render(VectorXd &pose, Mat &img, bool clear, string program){
+    if(clear)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for(uint mesh=0; mesh<meshes.size(); mesh++){
-        renderer->renderColor(meshes[mesh], pose);
+        renderer->renderColor(meshes[mesh], pose, program);
     }
     return renderer->getImage(img);
 }
 
-void Model::render(Mat &img){
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void Model::render(Mat &img, bool clear, string program){
+    if(clear)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     for(uint mesh=0; mesh<meshes.size(); mesh++){
-        renderer->renderColor(meshes[mesh]);
+        renderer->renderColor(meshes[mesh], program);
     }
     return renderer->getImage(img);
 }

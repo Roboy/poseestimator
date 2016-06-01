@@ -14,7 +14,9 @@ int main()
     glewExperimental = GL_TRUE;
     glewInit();
 
-    Model model("/home/letrend/workspace/poseestimator/","model_simplified2.sdf");
+    Model model("/home/letrend/workspace/poseestimator/","Iron_Man_mark_6.dae");
+
+    Model room("/home/letrend/workspace/poseestimator/","room.dae", false);
 
 //    cv::namedWindow("camera image");
 //    cv::moveWindow("camera image", 1000,0);
@@ -47,26 +49,29 @@ int main()
         static uint count = 0;
 
         VectorXd pose(6),grad(6);
-        pose << 0,0,-1,degreesToRadians(10),degreesToRadians(0),degreesToRadians(0);
+        pose << 0,0,-1,degreesToRadians(0),degreesToRadians(0),degreesToRadians(0);
         Mat img_camera;
-        model.render(pose, img_camera);
+        room.render(img_camera, true);
+        model.render(pose, img_camera, false);
 
         cout << "press ENTER to run tracking, press SPACE to toggle first person view (use WASD-keys to move around)" << endl;
         while(!sf::Keyboard::isKeyPressed(sf::Keyboard::Return)) {
             model.updateViewMatrix(window);
-            model.render(img_camera);
+            room.render(img_camera, true);
+            model.render(img_camera, false);
             window.display();
         }
 
-        float lambda_trans = 0, lambda_rot = 0.000001;
+        float lambda_trans = 0.00001, lambda_rot = 0.000001;
         uint iter = 0;
         model.poseestimator->cost.clear();
-        while(iter<100 && k!=32){
+        while(iter<1000 && k!=32){
             Mat img_artificial;
-            model.render(pose_estimator, img_artificial);
+            model.render(pose_estimator, img_artificial, true, "color_simple");
             imshow("artificial image", img_artificial);
 
             model.poseestimator->iterateOnce(img_camera, img_artificial, pose_estimator, grad);
+            cout << "gradient:\n" << grad << endl;
             pose_estimator(0) += lambda_trans*grad(0);
             pose_estimator(1) += lambda_trans*grad(1);
             pose_estimator(2) += lambda_trans*grad(2);

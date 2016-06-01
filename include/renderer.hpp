@@ -49,9 +49,9 @@ public:
 
     ~Renderer();
 
-    void renderColor(Mesh *mesh, VectorXd &pose);
+    void renderColor(Mesh *mesh, VectorXd &pose, string program = "color");
 
-    void renderColor(Mesh *mesh);
+    void renderColor(Mesh *mesh, string program = "color");
 
     void getImage(Mat &img);
 
@@ -70,7 +70,7 @@ private:
     map<string, GLuint> shader, program;
     map<string, vector<unsigned short>> indices;
     map<string, GLuint> tbo;
-    GLint ViewMatrixID, MatrixID, ModelMatrixID, LightPositionID;
+    map<string, GLint> ViewMatrixID, MatrixID, ModelMatrixID, LightPositionID;
 public:
     Matrix4f ProjectionMatrix, ViewMatrix;
 };
