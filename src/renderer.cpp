@@ -126,41 +126,6 @@ bool Renderer::loadShaderCodeFromFile(const char *file_path, string &src) {
     }
 }
 
-void Renderer::visualize(float3 *vertices, float3 *vectors, int numberOfVertices) {
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::PointCloud<pcl::Normal>::Ptr cloud_vectors_ptr(new pcl::PointCloud<pcl::Normal>);
-    uint8_t r(255), g(255), b(255);
-    for (uint i = 0; i < numberOfVertices; i++) {
-        if(vertices[i].x != 0) {
-            pcl::PointXYZRGB point(255, 255, 255);
-            point.x = vertices[i].x;
-            point.y = vertices[i].y;
-            point.z = vertices[i].z;
-            point_cloud_ptr->points.push_back(point);
-            pcl::Normal n(vectors[i].x, vectors[i].y, vectors[i].z);
-            cloud_vectors_ptr->push_back(n);
-        }
-    }
-    point_cloud_ptr->width = (int) point_cloud_ptr->points.size();
-    point_cloud_ptr->height = 1;
-    cloud_vectors_ptr->width = (int) cloud_vectors_ptr->points.size();
-    cloud_vectors_ptr->height = 1;
-
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D viewer"));
-    viewer->setBackgroundColor(0, 0, 0);
-    pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(point_cloud_ptr);
-    viewer->addPointCloud<pcl::PointXYZRGB>(point_cloud_ptr, rgb, "sample cloud");
-    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample cloud");
-    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(point_cloud_ptr, cloud_vectors_ptr, 1, 0.05, "normals");
-    viewer->addCoordinateSystem(1.0);
-    viewer->initCameraParameters();
-
-    while (!viewer->wasStopped() ) {
-        viewer->spinOnce(100);
-        boost::this_thread::sleep(boost::posix_time::microseconds(100000));
-    }
-}
-
 void Renderer::compileShader(string src, GLenum type, GLuint &shader) {
     shader = glCreateShader(type);
     const char *c_str = src.c_str();

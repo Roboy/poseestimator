@@ -259,9 +259,9 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
             gradRot[idx].z = statistics * (M[0 + 3 * 2] * normal.x + M[1 + 3 * 2] * normal.y + M[2 + 3 * 2] * normal.z);
         }
         else {
-            vertices_out[idx].x = 0;
-            vertices_out[idx].y = 0;
-            vertices_out[idx].z = 0;
+            normals_out[idx].x = 0;
+            normals_out[idx].y = 0;
+            normals_out[idx].z = 0;
         }
     }
 }
@@ -299,7 +299,6 @@ __global__ void deviceParSum(float3 *grad, int numberOfVertices, float* gradSum)
 }
 
 double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad) {
-    timer.start();
     Mat img_camera_gray, img_camera_copy, img_artificial_gray, img_artificial_gray2;
     VectorXd initial_pose = pose;
 
@@ -327,8 +326,6 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
             drawContours(img_camera_copy, contours, idx, cv::Scalar(0, 255, 0), 1, 8, hierarchy, 0, cv::Point());
         }
         imshow("camera image", img_camera_copy);
-
-        cout << "time for finding silhuette: " << timer.elapsedTimeMilliSeconds() << " ms" << endl;
 
         Mat R_mask = Mat::zeros(HEIGHT, WIDTH, CV_8UC1), Rc_mask,
                 R = Mat::zeros(HEIGHT, WIDTH, CV_8UC1),
@@ -362,6 +359,8 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
         double sigma_out = sum(Rcpow).val[0] / A_out;
 
         double energy = -sum(Rpow).val[0] - sum(Rcpow).val[0];
+        cost.push_back(energy);
+
         cout << "cost: " << energy << endl;
 
         Matrix3f rot = Matrix3f::Identity();
@@ -395,8 +394,6 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
 
         grad << 0, 0, 0, 0, 0, 0;
 
-        timer.start();
-
         for(uint i=0;i<modelData.size();i++) {
             for(uint j=0;j<modelData[i]->cuda_vbo_resource.size();j++) {
                 // set modelPose on gpu
@@ -429,14 +426,14 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
                 CUDA_CHECK;
                 deviceParSum <<< gridSum, blockSum, blockSum.x * sizeof(float3)>>> ( modelData[i]->d_gradRot[j], modelData[i]->numberOfVertices[j], &d_gradient[3]);
                 CUDA_CHECK;
-
-//                cudaMemcpy( modelData[i]->vertices_out[j],  modelData[i]->d_vertices_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
-//                CUDA_CHECK;
-//                cudaMemcpy( modelData[i]->normals_out[j],  modelData[i]->d_normals_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
-//                CUDA_CHECK;
-//                cudaMemcpy( modelData[i]->tangents_out[j],  modelData[i]->d_tangents_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
-//                CUDA_CHECK;
-
+#ifdef VISUALIZE
+                cudaMemcpy( modelData[i]->vertices_out[j],  modelData[i]->d_vertices_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+                CUDA_CHECK;
+                cudaMemcpy( modelData[i]->normals_out[j],  modelData[i]->d_normals_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+                CUDA_CHECK;
+                cudaMemcpy( modelData[i]->tangents_out[j],  modelData[i]->d_tangents_out[j], modelData[i]->numberOfVertices[j] * sizeof(float3), cudaMemcpyDeviceToHost);
+                CUDA_CHECK;
+#endif
 
                 float gradient[6];
                 cudaMemcpy( gradient,  d_gradient, 6 * sizeof(float), cudaMemcpyDeviceToHost);
@@ -466,14 +463,12 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
             }
         }
 
-        cout << "time for cuda: " << timer.elapsedTimeMilliSeconds() << " ms" << endl;
+        // copy data from gpu to cpu
+        cudaMemcpy(res, d_img_out, WIDTH * HEIGHT * sizeof(uchar), cudaMemcpyDeviceToHost);
+        CUDA_CHECK;
 
-//        // copy data from gpu to cpu
-//        cudaMemcpy(res, d_img_out, WIDTH * HEIGHT * sizeof(uchar), cudaMemcpyDeviceToHost);
-//        CUDA_CHECK;
-//
-//        Mat img(HEIGHT, WIDTH, CV_8UC1, res);
-//        imshow("result", img);
+        Mat img(HEIGHT, WIDTH, CV_8UC1, res);
+        imshow("result", img);
 
         return energy;
     } else {

@@ -105,7 +105,7 @@ bool Mesh::LoadMesh(const std::string& Filename, VectorXf &pose)
     bool Ret = false;
     Assimp::Importer Importer;
 
-    const aiScene* pScene = Importer.ReadFile(Filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+    const aiScene* pScene = Importer.ReadFile(Filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_FixInfacingNormals );
     
     if (pScene) {
         Ret = InitFromScene(pScene, Filename);

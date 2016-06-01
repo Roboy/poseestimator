@@ -1,5 +1,6 @@
 #include "model.hpp"
-#include <SFML/Window.hpp>
+// mathgl
+#include <mgl2/mgl.h>
 
 int main()
 {
@@ -46,7 +47,7 @@ int main()
         static uint count = 0;
 
         VectorXd pose(6),grad(6);
-        pose << 0,0,-1,degreesToRadians(0),degreesToRadians(0),degreesToRadians(20);
+        pose << 0,0,-1,degreesToRadians(10),degreesToRadians(0),degreesToRadians(0);
         Mat img_camera;
         model.render(pose, img_camera);
 
@@ -57,9 +58,10 @@ int main()
             window.display();
         }
 
-        float lambda_trans = 0, lambda_rot = 0.0000001;
+        float lambda_trans = 0, lambda_rot = 0.000001;
         uint iter = 0;
-        while(iter<1000 && k!=32){
+        model.poseestimator->cost.clear();
+        while(iter<100 && k!=32){
             Mat img_artificial;
             model.render(pose_estimator, img_artificial);
             imshow("artificial image", img_artificial);
@@ -76,9 +78,29 @@ int main()
 
             k = cv::waitKey(1);
 
-//            renderer.visualize(poseestimator.vertices_out, poseestimator.normals_out, poseestimator.numberOfVertices);
-//            renderer.visualize(poseestimator.vertices_out, poseestimator.tangents_out, poseestimator.numberOfVertices);
+#ifdef VISUALIZE
+            model.visualize(NORMALS);
+            model.visualize(TANGENTS);
+#endif
         }
+
+        mglGraph graph;
+        mglData x,y;
+        y.Create(model.poseestimator->cost.size());
+        x.Create(model.poseestimator->cost.size());
+        double minCost = model.poseestimator->cost[0], maxCost = model.poseestimator->cost[0];
+        for(uint i=0;i<model.poseestimator->cost.size();i++) {
+            x[i] = i;
+            y[i] = model.poseestimator->cost[i];
+            if(model.poseestimator->cost[i]<minCost)
+                minCost = model.poseestimator->cost[i];
+            if(model.poseestimator->cost[i]>maxCost)
+                maxCost = model.poseestimator->cost[i];
+        }
+        graph.SetRanges(0,model.poseestimator->cost.size(),minCost,maxCost);
+        graph.Axis();
+        graph.Plot(x,y);
+        graph.WritePNG("cost.png");
 
         // end the current frame (internally swaps the front and back buffers)
         window.display();

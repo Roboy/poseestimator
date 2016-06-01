@@ -1,3 +1,4 @@
+#pragma once
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,8 +12,6 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <string>
-// timer
-#include "timer.hpp"
 // mesh
 #include "mesh.hpp"
 // cuda
@@ -97,9 +96,9 @@ public:
     ~Poseestimator();
 
     double iterateOnce(const Mat &img_camera, Mat &img_artificial, VectorXd &pose, VectorXd &grad);
+    vector<ModelData*> modelData;
+    vector<double> cost;
 private:
     float *d_gradient = NULL;
     uchar *d_image = NULL, *d_border = NULL, *d_img_out = NULL, *res;
-    Timer timer;
-    vector<ModelData*> modelData;
 };

@@ -55,8 +55,6 @@ public:
 
     void getImage(Mat &img);
 
-    void visualize(float3 *vertices, float3 *vectors, int numberOfVertices);
-
     map<string, vector<glm::vec3>> vertices, normals;
     Matrix3f K, Kinv; // intrinsics matrix
 private:
