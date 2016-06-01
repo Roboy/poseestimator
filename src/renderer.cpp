@@ -111,8 +111,10 @@ void Renderer::renderColor(Mesh *mesh, string programName) {
     glUniformMatrix4fv(ViewMatrixID[programName], 1, GL_FALSE, &ViewMatrix(0, 0));
     glUniformMatrix4fv(MatrixID[programName], 1, GL_FALSE, &MVP(0, 0));
     glUniformMatrix4fv(ModelMatrixID[programName], 1, GL_FALSE, &mesh->ModelMatrix(0, 0));
-    Vector3f lightPosition(0,0,-1);
-    glUniform3fv(LightPositionID[programName], 1, &lightPosition(0));
+    static float x = 0;
+//    Vector3f lightPosition;
+//    lightPosition = ViewMatrix.topRightCorner(3,1);
+//    glUniform3fv(LightPositionID[programName], 1, &lightPosition(0));
 
     mesh->Render();
 }

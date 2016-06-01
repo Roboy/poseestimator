@@ -179,19 +179,19 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
 
         // modelPose
         // x
-        normalModel.x += c_cameraPose[0 + 4 * 0] * n.x;
-        normalModel.x += c_cameraPose[0 + 4 * 1] * n.y;
-        normalModel.x += c_cameraPose[0 + 4 * 2] * n.z;
+        normalModel.x += c_modelPose[0 + 4 * 0] * n.x;
+        normalModel.x += c_modelPose[0 + 4 * 1] * n.y;
+        normalModel.x += c_modelPose[0 + 4 * 2] * n.z;
 
         // y
-        normalModel.y += c_cameraPose[1 + 4 * 0] * n.x;
-        normalModel.y += c_cameraPose[1 + 4 * 1] * n.y;
-        normalModel.y += c_cameraPose[1 + 4 * 2] * n.z;
+        normalModel.y += c_modelPose[1 + 4 * 0] * n.x;
+        normalModel.y += c_modelPose[1 + 4 * 1] * n.y;
+        normalModel.y += c_modelPose[1 + 4 * 2] * n.z;
 
         // z
-        normalModel.z += c_cameraPose[2 + 4 * 0] * n.x;
-        normalModel.z += c_cameraPose[2 + 4 * 1] * n.y;
-        normalModel.z += c_cameraPose[2 + 4 * 2] * n.z;
+        normalModel.z += c_modelPose[2 + 4 * 0] * n.x;
+        normalModel.z += c_modelPose[2 + 4 * 1] * n.y;
+        normalModel.z += c_modelPose[2 + 4 * 2] * n.z;
 
         // cameraPose
         normal.x = 0.0f;
@@ -252,20 +252,20 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
         pixelCoord.y = (int) pixel.y / pixel.z;
         // if its a border pixel and the dot product small enough
         if (pixelCoord.x >= 0 && pixelCoord.x < WIDTH && pixelCoord.y >= 0 && pixelCoord.y < HEIGHT &&
-            fabsf(dot)< 0.1f && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {//
+            fabsf(dot)< 0.001f && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {//
             img_out[pixelCoord.y * WIDTH + pixelCoord.x] = 255;
             float Rc = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out) *
                         ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out)) / sigma_out;
             float R = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in) *
                        ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in)) / sigma_in;
-            float statistics = (logf(sigma_out / sigma_in) + Rc - R) * dCnorm;//
+            float statistics = (logf(sigma_out / sigma_in) + Rc - R) ;//* dCnorm
             gradTrans[idx].x = statistics * normal.x;
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
 
-            float Om[9] = {0, -posModel.z, posModel.y,
-                           posModel.z, 0, -posModel.x,
-                           -posModel.y, posModel.x, 0};
+            float Om[9] = {0, posModel.z, -posModel.y,
+                           -posModel.z, 0, posModel.x,
+                           posModel.y, -posModel.x, 0};
             float M[9] = {0, 0, 0,
                           0, 0, 0,
                           0, 0, 0};
@@ -274,15 +274,15 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
                 for (uint j = 0; j < 3; j++)
                     for (uint k = 0; k < 3; k++)
                         M[i + 3 * j] += c_cameraPose[i + 4 * k] * Om[k + 3 * j];
-            statistics =  posNorm / (pos.z * pos.z * pos.z);
+            statistics *= posNorm / (pos.z * pos.z * pos.z);
             gradRot[idx].x = statistics * (M[0 + 3 * 0] * normal.x + M[1 + 3 * 0] * normal.y + M[2 + 3 * 0] * normal.z);
             gradRot[idx].y = statistics * (M[0 + 3 * 1] * normal.x + M[1 + 3 * 1] * normal.y + M[2 + 3 * 1] * normal.z);
             gradRot[idx].z = statistics * (M[0 + 3 * 2] * normal.x + M[1 + 3 * 2] * normal.y + M[2 + 3 * 2] * normal.z);
         }
         else {
-            normals_out[idx].x = 0;
-            normals_out[idx].y = 0;
-            normals_out[idx].z = 0;
+            tangents_out[idx].x = 0;
+            tangents_out[idx].y = 0;
+            tangents_out[idx].z = 0;
         }
     }
 }
@@ -344,7 +344,7 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
         Mat border = Mat::zeros(HEIGHT, WIDTH, CV_8UC1);
         double A_in = 0;
         for (int idx = 0; idx < contours.size(); idx++) {
-            drawContours(border, contours, idx, 255, 1, 8, hierarchy, 0, cv::Point());
+            drawContours(border, contours, idx, 255, 15, 8, hierarchy, 0, cv::Point());
             A_in += contourArea(contours[idx]);
             drawContours(img_camera_copy, contours, idx, cv::Scalar(0, 255, 0), 1, 8, hierarchy, 0, cv::Point());
         }

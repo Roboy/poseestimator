@@ -111,6 +111,9 @@ void Model::updateViewMatrix(sf::Window &window){
     sf::Vector2i windowsize = sf::Vector2i(window.getSize().x, window.getSize().y);
     double xpos, ypos;
     Matrix3f rot = Matrix3f::Identity();
+    static float horizontalAngle = 0;
+    static float verticalAngle = 0;
+
     static bool sticky = false;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)){
         sticky = !sticky;
@@ -124,18 +127,18 @@ void Model::updateViewMatrix(sf::Window &window){
             // set cursor to window center
             sf::Mouse::setPosition(windowsize/2, window);
             // Compute new orientation
-            float horizontalAngle = -speed_rot * float(delta.x);
-            float verticalAngle = -speed_rot * float(delta.y);
-
-            rot = Eigen::AngleAxisf(horizontalAngle, Vector3f::UnitY()) *
-                  Eigen::AngleAxisf(verticalAngle, Vector3f::UnitX());
+            horizontalAngle -= speed_rot * float(delta.x);
+            verticalAngle += speed_rot * float(delta.y);
         }
     }
+
+    rot = Eigen::AngleAxisf(horizontalAngle, Vector3f::UnitY()) *
+          Eigen::AngleAxisf(verticalAngle, Vector3f::UnitX());
 
     Vector3f direction = Vector3f::UnitZ();
     Vector3f right = Vector3f::UnitX();
 
-    Vector3f dcameraPos(0,0,0);
+    static Vector3f dcameraPos(0,0,-1);
     // Move forward
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
         dcameraPos += direction  * speed_trans;
@@ -157,12 +160,13 @@ void Model::updateViewMatrix(sf::Window &window){
     RT.topLeftCorner(3,3) = rot;
     RT.topRightCorner(3,1) = dcameraPos;
 
-    renderer->ViewMatrix = RT*renderer->ViewMatrix;
+    renderer->ViewMatrix = RT;
 }
 
 void Model::visualize(int type) {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr mesh_cloud_ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::Normal>::Ptr mesh_cloud_normals_ptr(new pcl::PointCloud<pcl::Normal>);
     pcl::PointCloud<pcl::Normal>::Ptr cloud_vectors_ptr(new pcl::PointCloud<pcl::Normal>);
 
     for(uint m=0; m<meshes.size(); m++){
@@ -173,9 +177,13 @@ void Model::visualize(int type) {
                 point.y = poseestimator->modelData[m]->vertices_out[i][j].y;
                 point.z = poseestimator->modelData[m]->vertices_out[i][j].z;
                 mesh_cloud_ptr->points.push_back(point);
-                if(poseestimator->modelData[m]->normals_out[i][j].x!=0 &&
-                        poseestimator->modelData[m]->normals_out[i][j].y!=0 &&
-                        poseestimator->modelData[m]->normals_out[i][j].z!=0) {
+                pcl::Normal n(poseestimator->modelData[m]->normals_out[i][j].x,
+                              poseestimator->modelData[m]->normals_out[i][j].y,
+                              poseestimator->modelData[m]->normals_out[i][j].z);
+                mesh_cloud_normals_ptr->push_back(n);
+                if(poseestimator->modelData[m]->tangents_out[i][j].x!=0 &&
+                        poseestimator->modelData[m]->tangents_out[i][j].y!=0 &&
+                        poseestimator->modelData[m]->tangents_out[i][j].z!=0) {
                     pcl::PointXYZRGB point(0, 255, 0);
                     point.x = poseestimator->modelData[m]->vertices_out[i][j].x;
                     point.y = poseestimator->modelData[m]->vertices_out[i][j].y;
@@ -203,6 +211,8 @@ void Model::visualize(int type) {
     }
     mesh_cloud_ptr->width = (int) mesh_cloud_ptr->points.size();
     mesh_cloud_ptr->height = 1;
+    mesh_cloud_normals_ptr->width = (int) mesh_cloud_normals_ptr->points.size();
+    mesh_cloud_normals_ptr->height = 1;
     point_cloud_ptr->width = (int) point_cloud_ptr->points.size();
     point_cloud_ptr->height = 1;
     cloud_vectors_ptr->width = (int) cloud_vectors_ptr->points.size();
@@ -213,10 +223,12 @@ void Model::visualize(int type) {
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgbMesh(mesh_cloud_ptr);
     viewer->addPointCloud<pcl::PointXYZRGB>(mesh_cloud_ptr, rgbMesh, "mesh cloud");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "mesh cloud");
+    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(point_cloud_ptr, mesh_cloud_normals_ptr, 1, 0.01, "normals");
+
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(point_cloud_ptr);
     viewer->addPointCloud<pcl::PointXYZRGB>(point_cloud_ptr, rgb, "sample cloud");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "sample cloud");
-    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(point_cloud_ptr, cloud_vectors_ptr, 1, 0.05, "normals");
+    viewer->addPointCloudNormals<pcl::PointXYZRGB, pcl::Normal>(point_cloud_ptr, cloud_vectors_ptr, 1, 0.05, "vectors");
     viewer->initCameraParameters();
 
     viewer->setCameraPosition(0,0,0,0,0,-1,0,1,0);

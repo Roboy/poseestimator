@@ -14,7 +14,7 @@ int main()
     glewExperimental = GL_TRUE;
     glewInit();
 
-    Model model("/home/letrend/workspace/poseestimator/","Iron_Man_mark_6.dae");
+    Model model("/home/letrend/workspace/poseestimator/","sphere.dae");// Iron_Man_mark_6.dae  model_simplified.sdf
 
     Model room("/home/letrend/workspace/poseestimator/","room.dae", false);
 
@@ -51,21 +51,22 @@ int main()
         VectorXd pose(6),grad(6);
         pose << 0,0,-1,degreesToRadians(0),degreesToRadians(0),degreesToRadians(0);
         Mat img_camera;
-        room.render(img_camera, true);
-        model.render(pose, img_camera, false);
+//        room.render(img_camera, true);
+        model.render(pose, img_camera, true);
 
         cout << "press ENTER to run tracking, press SPACE to toggle first person view (use WASD-keys to move around)" << endl;
         while(!sf::Keyboard::isKeyPressed(sf::Keyboard::Return)) {
             model.updateViewMatrix(window);
+            room.renderer->ViewMatrix = model.renderer->ViewMatrix;
             room.render(img_camera, true);
-            model.render(img_camera, false);
+            model.render(img_camera, false, "color_simple");
             window.display();
         }
 
-        float lambda_trans = 0.00001, lambda_rot = 0.000001;
+        float lambda_trans = 0.000001, lambda_rot = 0.0001;
         uint iter = 0;
         model.poseestimator->cost.clear();
-        while(iter<1000 && k!=32){
+        while(iter<10000 && k!=32){
             Mat img_artificial;
             model.render(pose_estimator, img_artificial, true, "color_simple");
             imshow("artificial image", img_artificial);
