@@ -252,13 +252,13 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
         pixelCoord.y = (int) pixel.y / pixel.z;
         // if its a border pixel and the dot product small enough
         if (pixelCoord.x >= 0 && pixelCoord.x < WIDTH && pixelCoord.y >= 0 && pixelCoord.y < HEIGHT &&
-            fabsf(dot)< 0.001f && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {//
-            img_out[pixelCoord.y * WIDTH + pixelCoord.x] = 255;
-            float Rc = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out) *
-                        ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out)) ;// / sigma_out
-            float R = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in) *
-                       ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in)) ;// /sigma_in
-            float statistics = Rc - R ;//* dCnorm logf(sigma_out / sigma_in) +
+            fabsf(dot)< 0.005f && border[pixelCoord.y * WIDTH + (WIDTH-pixelCoord.x-1)] == 255) {//
+            img_out[pixelCoord.y * WIDTH + (WIDTH-pixelCoord.x-1)] = 255;
+            float Rc = (((float) image[pixelCoord.y * WIDTH + (WIDTH-pixelCoord.x-1)] - mu_out) *
+                        ((float) image[pixelCoord.y * WIDTH + (WIDTH-pixelCoord.x-1)] - mu_out)) ;// / sigma_out
+            float R = (((float) image[pixelCoord.y * WIDTH + (WIDTH-pixelCoord.x-1)] - mu_in) *
+                       ((float) image[pixelCoord.y * WIDTH + (WIDTH-pixelCoord.x-1)] - mu_in)) ;// /sigma_in
+            float statistics = (Rc - R) ;// * dCnorm logf(sigma_out / sigma_in) +
             gradTrans[idx].x = statistics * normal.x;
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
@@ -344,12 +344,13 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
         Mat border = Mat::zeros(HEIGHT, WIDTH, CV_8UC1);
         double A_in = 0;
         for (int idx = 0; idx < contours.size(); idx++) {
-            drawContours(border, contours, idx, 255, 15, 8, hierarchy, 0, cv::Point());
+            drawContours(border, contours, idx, 255, 10, 8, hierarchy, 0, cv::Point());
             A_in += contourArea(contours[idx]);
             drawContours(img_camera_copy, contours, idx, cv::Scalar(0, 255, 0), 1, 8, hierarchy, 0, cv::Point());
         }
         double A_out = WIDTH * HEIGHT - A_in;
         imshow("camera image", img_camera_copy);
+        cv::waitKey(1);
 
         Mat R_mask = Mat::zeros(HEIGHT, WIDTH, CV_8UC1), Rc_mask,
                 R = Mat::zeros(HEIGHT, WIDTH, CV_8UC1),
@@ -365,6 +366,7 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
         R.convertTo(R, CV_32FC1);
         Rc.convertTo(Rc, CV_32FC1);
 
+        // calculate mean
         double mu_in = sum(R).val[0] / A_in;
         double mu_out = sum(Rc).val[0] / A_out;
         R = R - mu_in;
@@ -372,12 +374,14 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
 
         imshow("R", R/255.0f);
         imshow("Rc", Rc/255.0f);
+        cv::waitKey(1);
 
         // copy only the respective areas
         Mat Rpow = Mat::zeros(HEIGHT, WIDTH, CV_32FC1), Rcpow = Mat::zeros(HEIGHT, WIDTH, CV_32FC1);
         R.copyTo(Rpow, R_mask);
         Rc.copyTo(Rcpow, Rc_mask);
 
+        // calculate sigma
         pow(Rpow, 2.0, Rpow);
         pow(Rcpow, 2.0, Rcpow);
 
@@ -502,6 +506,7 @@ double Poseestimator::iterateOnce(const Mat &img_camera, Mat &img_artificial, Ve
 
         Mat img(HEIGHT, WIDTH, CV_8UC1, res);
         imshow("result", img);
+        cv::waitKey(1);
 
         return energy;
     } else {

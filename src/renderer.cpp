@@ -124,7 +124,7 @@ void Renderer::getImage(Mat &img){
     GLubyte data[4 * WIDTH * HEIGHT]; // it should be 3 because of BGR, but using 3 results in strange border...
     glReadPixels(0, 0, WIDTH, HEIGHT, GL_BGR, GL_UNSIGNED_BYTE, data);
     Mat tmp = cv::Mat(HEIGHT, WIDTH, CV_8UC3, data);
-    flip(tmp, tmp, -1);
+    flip(tmp, tmp, 0);
     tmp.copyTo(img);
 }
 

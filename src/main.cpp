@@ -2,24 +2,34 @@
 //// mathgl
 //#include <mgl2/mgl.h>
 
-int main()
+int main(int argc, char* argv[])
 {
     sf::ContextSettings settings;
     settings.depthBits = 24;
     settings.stencilBits = 8;
 
     sf::Window window(sf::VideoMode(WIDTH, HEIGHT, 24), "Transform Feedback", sf::Style::Titlebar | sf::Style::Close, settings);
+    window.setPosition(sf::Vector2i(1280,0));
 
     // Initialize GLEW
     glewExperimental = GL_TRUE;
     glewInit();
 
-    Model model("/home/letrend/workspace/poseestimator/","sphere.dae");// Iron_Man_mark_6.dae  model_simplified.sdf
+    Model model("/home/letrend/workspace/poseestimator/", argv[1]);// Iron_Man_mark_6.dae  model_simplified.sdf
 
     Model room("/home/letrend/workspace/poseestimator/","room.dae", false);
 
-//    cv::namedWindow("camera image");
-//    cv::moveWindow("camera image", 1000,0);
+    cv::namedWindow("camera image");
+    cv::moveWindow("camera image", 0,0);
+    cv::namedWindow("artificial image");
+    cv::moveWindow("artificial image", 640,0);
+    cv::namedWindow("R");
+    cv::moveWindow("R", 0,520);
+    cv::namedWindow("Rc");
+    cv::moveWindow("Rc", 640,520);
+    cv::namedWindow("result");
+    cv::moveWindow("result", 1280,520);
+
 //
 //    // run the main loop
     bool running = true;
@@ -58,17 +68,18 @@ int main()
             room.renderer->ViewMatrix = model.renderer->ViewMatrix;
             room.render(img_camera, true);
             model.render(img_camera, false, "color_simple");
-//            model.render(img_camera, true);
+//            model.render(img_camera, true, "color_simple");
             window.display();
         }
 
-        float lambda_trans = 0.000000001, lambda_rot = 0.00000001;
+        float lambda_trans = atof(argv[2]), lambda_rot = atof(argv[3]);
         uint iter = 0;
         model.poseestimator->cost.clear();
-        while(iter<10000 && k!=32){
+        while(iter<100 && !sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)){
             Mat img_artificial;
             model.render(pose_estimator, img_artificial, true, "color_simple");
             imshow("artificial image", img_artificial);
+            cv::waitKey(1);
 
             model.poseestimator->iterateOnce(img_camera, img_artificial, pose_estimator, grad);
             cout << "gradient:\n" << grad << endl;
@@ -79,9 +90,10 @@ int main()
             pose_estimator(4) += lambda_rot*grad(4);
             pose_estimator(5) += lambda_rot*grad(5);
 
-            iter++;
+            lambda_trans*=0.97f;
+            lambda_rot*=0.97f;
 
-            k = cv::waitKey(1);
+            iter++;
 
 #ifdef VISUALIZE
             model.visualize(NORMALS);

@@ -26,7 +26,7 @@ void main(){
 	vec3 LightColor1 = vec3(1,1,1);
 	vec3 LightColor2 = vec3(1,1,1);
 	vec3 LightColor3 = vec3(1,1,1);
-	float LightPower = 10.0f;
+	float LightPower = 1.0f;
 
 	// Material properties
 	vec3 MaterialDiffuseColor = texture2D( myTextureSampler, UV ).rgb;
