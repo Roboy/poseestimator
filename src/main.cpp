@@ -94,8 +94,10 @@ int main(int argc, char* argv[])
             iter++;
 
 #ifdef VISUALIZE
-            model.visualize(NORMALS);
-            model.visualize(TANGENTS);
+            if((iter+1)%10==0) {
+                model.visualize(NORMALS);
+                model.visualize(TANGENTS);
+            }
 #endif
         }
 
