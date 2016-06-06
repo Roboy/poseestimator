@@ -6,7 +6,7 @@ You can find it in the paper folder.
 eigen3, sfml, glew, imagemagick, assimp, opengl, cuda, opencv, sdformat, pcl, boost
 
 ### hardware requirements ###
-you will nee a cuda capable graphic card (this code was tested with a NVidia [GeForce GTX 960](http://www.geforce.com/hardware/desktop-gpus/geforce-gtx-960/specifications)) 
+you need a cuda capable graphic card to run this code(this code was tested with a NVidia [GeForce GTX 960](http://www.geforce.com/hardware/desktop-gpus/geforce-gtx-960/specifications)) 
 
 ### build ###
 you will need to edit the root path for the models in the main.cpp
