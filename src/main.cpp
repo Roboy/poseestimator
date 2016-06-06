@@ -1,6 +1,4 @@
 #include "model.hpp"
-//// mathgl
-//#include <mgl2/mgl.h>
 
 int main(int argc, char* argv[])
 {
@@ -100,24 +98,6 @@ int main(int argc, char* argv[])
             model.visualize(TANGENTS);
 #endif
         }
-
-//        mglGraph graph;
-//        mglData x,y;
-//        y.Create(model.poseestimator->cost.size());
-//        x.Create(model.poseestimator->cost.size());
-//        double minCost = model.poseestimator->cost[0], maxCost = model.poseestimator->cost[0];
-//        for(uint i=0;i<model.poseestimator->cost.size();i++) {
-//            x[i] = i;
-//            y[i] = model.poseestimator->cost[i];
-//            if(model.poseestimator->cost[i]<minCost)
-//                minCost = model.poseestimator->cost[i];
-//            if(model.poseestimator->cost[i]>maxCost)
-//                maxCost = model.poseestimator->cost[i];
-//        }
-//        graph.SetRanges(0,model.poseestimator->cost.size(),minCost,maxCost);
-//        graph.Axis();
-//        graph.Plot(x,y);
-//        graph.WritePNG("cost.png");
 
         // end the current frame (internally swaps the front and back buffers)
         window.display();

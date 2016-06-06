@@ -54,7 +54,7 @@ find_package(PCL REQUIRED)
 include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-# pcl
+# boost
 find_package(Boost COMPONENTS filesystem REQUIRED)
 
 # the following strips some vtk stuff, otherwise the nvcc compiler cannot deal with pcl
@@ -69,9 +69,6 @@ endforeach()
 foreach(d ${vtk_flags})
     remove_definitions(-D${d})
 endforeach()
-
-## mathgl
-#find_package(MathGL REQUIRED)
 
 include_directories(include common_utilities/include)
 

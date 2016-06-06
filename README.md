@@ -8,7 +8,8 @@ eigen3, sfml, glew, imagemagick, assimp, opengl, cuda, opencv, sdformat, pcl, bo
 ### hardware requirements ###
 you will nee a cuda capable graphic card (this code was tested with a NVidia [GeForce GTX 960](http://www.geforce.com/hardware/desktop-gpus/geforce-gtx-960/specifications)) 
 
-### build and run ###
+### build ###
+you will need to edit the root path for the models in the main.cpp
 ```
 #!bash
 cd path/to/pose_estimation
@@ -17,7 +18,7 @@ cd build
 cmake ..
 make -j4
 ```
-you will need to edit the paths to the shaders and the obj to be loaded. then:
+### run ###
 ```
 #!bash
 cd path/to/pose_estimation/bin
