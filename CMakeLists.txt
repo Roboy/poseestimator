@@ -9,7 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 # RelWithDebInfo, Release or Debug
 SET(CMAKE_BUILD_TYPE Debug FORCE)
 
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -std=c++11 -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0 -fext-numeric-literals" )
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -std=c++11 -DMAGICKCORE_QUANTUM_DEPTH=16 -DMAGICKCORE_HDRI_ENABLE=0" ) # -fext-numeric-literals
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -70,8 +70,8 @@ foreach(d ${vtk_flags})
     remove_definitions(-D${d})
 endforeach()
 
-# mathgl
-find_package(MathGL COMPONENTS Qt REQUIRED)
+## mathgl
+#find_package(MathGL REQUIRED)
 
 include_directories(include common_utilities/include)
 
@@ -89,5 +89,5 @@ CUDA_ADD_LIBRARY(poseestimator src/poseestimator.cu STATIC )
 ADD_EXECUTABLE(poseestimation src/main.cpp src/renderer.cpp src/mesh.cpp src/model.cpp )
 TARGET_LINK_LIBRARIES(poseestimation ${SFML_LIBRARIES} ${GLEW_LIBRARIES} ${ASSIMP_LIBRARIES} ${OPENGL_LIBRARIES}
         ${ImageMagick_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBS} ${SDFormat_LIBRARIES} ${BOOST_LIBRARIES}
-        ${MathGL_LIBRARIES} poseestimator)
+        poseestimator) #${MathGL_LIBRARIES}
 

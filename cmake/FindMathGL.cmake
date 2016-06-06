@@ -44,33 +44,32 @@
 #=============================================================================
 
 FIND_PATH(MathGL_INCLUDE_DIRS NAMES mgl2/mgl.h
-  PATHS
-  /opt/local/include
-  /usr/include
-  /usr/local/include
+	PATHS
+	/opt/local/include
+	/usr/include
+	/usr/local/include
 )
 
 FIND_LIBRARY(MathGL_LIB NAMES mgl
-  PATHS
-  /opt/local/lib
-  /usr/local/lib
-  /usr/lib
+	PATHS
+	/opt/local/lib
+	/usr/lib
+	/usr/lib64
 )
-#FIND_LIBRARY(MathGL_QT_LIB NAMES mgl-qt
-#  PATHS
-#  /opt/local/lib
-#  /usr/local/lib
-#  /usr/lib
-#)
+FIND_LIBRARY(MathGL_QT_LIB NAMES mgl-qt
+	PATHS
+	/opt/local/lib
+	/usr/lib
+)
 
 FIND_LIBRARY(MathGL_GLUT_LIB NAMES mgl-glut
-        PATHS
-        /opt/local/lib
-        /usr/local/lib
-        /usr/lib
-        )
+	PATHS
+	/opt/local/lib
+	/usr/lib
+	/usr/lib64
+)
 
-SET(MathGL_LIBRARIES ${MathGL_LIB} ${MathGL_GLUT_LIB})
+SET(MathGL_LIBRARIES ${MathGL_LIB} ${MathGL_QT_LIB})
 
 IF (MathGL_INCLUDE_DIRS AND MathGL_LIBRARIES)
   SET(MathGL_FOUND TRUE)
