@@ -16,7 +16,7 @@ int main()
 
     Model model("/home/letrend/workspace/poseestimator/","sphere.dae");// Iron_Man_mark_6.dae  model_simplified.sdf
 
-//    Model room("/home/letrend/workspace/poseestimator/","room.dae", false);
+    Model room("/home/letrend/workspace/poseestimator/","room.dae", false);
 
 //    cv::namedWindow("camera image");
 //    cv::moveWindow("camera image", 1000,0);
@@ -55,14 +55,14 @@ int main()
         cout << "press ENTER to run tracking, press SPACE to toggle first person view (use WASD-keys to move around)" << endl;
         while(!sf::Keyboard::isKeyPressed(sf::Keyboard::Return)) {
             model.updateViewMatrix(window);
-//            room.renderer->ViewMatrix = model.renderer->ViewMatrix;
-//            room.render(img_camera, true);
-//            model.render(img_camera, false, "color_simple");
-            model.render(img_camera, true);
+            room.renderer->ViewMatrix = model.renderer->ViewMatrix;
+            room.render(img_camera, true);
+            model.render(img_camera, false, "color_simple");
+//            model.render(img_camera, true);
             window.display();
         }
 
-        float lambda_trans = 0.00001, lambda_rot = 0.000001;
+        float lambda_trans = 0.000000001, lambda_rot = 0.00000001;
         uint iter = 0;
         model.poseestimator->cost.clear();
         while(iter<10000 && k!=32){

@@ -255,10 +255,10 @@ __global__ void costFcn(Vertex *vertices, float3 *vertices_out, float3 *normals_
             fabsf(dot)< 0.001f && border[pixelCoord.y * WIDTH + pixelCoord.x] == 255) {//
             img_out[pixelCoord.y * WIDTH + pixelCoord.x] = 255;
             float Rc = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out) *
-                        ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out)) / sigma_out;
+                        ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_out)) ;// / sigma_out
             float R = (((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in) *
-                       ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in)) / sigma_in;
-            float statistics = (logf(sigma_out / sigma_in) + Rc - R) ;//* dCnorm
+                       ((float) image[pixelCoord.y * WIDTH + pixelCoord.x] - mu_in)) ;// /sigma_in
+            float statistics = Rc - R ;//* dCnorm logf(sigma_out / sigma_in) +
             gradTrans[idx].x = statistics * normal.x;
             gradTrans[idx].y = statistics * normal.y;
             gradTrans[idx].z = statistics * normal.z;
