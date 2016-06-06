@@ -12,7 +12,7 @@ you need a cuda capable graphic card to run this code(this code was tested with 
 you will need to edit the root path for the models in the main.cpp
 ```
 #!bash
-cd path/to/pose_estimation
+cd path/to/poseestimator
 mkdir build
 cd build
 cmake ..
@@ -21,7 +21,7 @@ make -j4
 ### run ###
 ```
 #!bash
-cd path/to/pose_estimation/bin
+cd path/to/poseestimator/bin
 ./poseestimator mesh_model lambda_trans lambda_rot
 ```
 The mesh_model is the model you want to use (can be .dae or .sdf file). The folder will be searched for this model and the first instance will be used. The two lambda parameters define the initial learning for translation and rotation. Example:
